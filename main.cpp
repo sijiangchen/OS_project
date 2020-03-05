@@ -1,12 +1,13 @@
 //RCS id:
 //lih19
-//
-//
+//huangh10
+//chens32
 #include <iostream>
 #include <string>
 #include <random>
 using namespace std;
 
+//li
 class Argument{
     //input arguments(a list of string)
 };
@@ -85,16 +86,23 @@ Output RoundRobin(Processes processes,Argument argv){
 
 int main(int argc,char* argv[]){
     //input and process creation
+    //li
     Argument arguments=ValidateInput(argv);
+    //all
     Processes processes=CreateProcesses(arguments);
 
     //4 algo
+
+    //li
     Output sjf=ShortestJobFirst(processes,arguments);
     Output srt=ShortestRemainingTime(processes,arguments);
+    //chen
     Output fcfs=FirstComeFirstServed(processes,arguments);
+    //huang
     Output rr=RoundRobin(processes,arguments);
 
     //result
+    //li
     CreateOutputs(sjf,srt,fcfs,rr);
     return 0;
 }
