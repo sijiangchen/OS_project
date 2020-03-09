@@ -35,3 +35,11 @@ void ReadyQueue::clear() {
     this->readyQueue.clear();
 }
 
+Process ReadyQueue::operator[](int i) {
+    return this->readyQueue[i];
+}
+
+int ReadyQueue::size() {
+    return this->readyQueue.size();
+}
+

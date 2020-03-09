@@ -1,3 +1,5 @@
+
+
 //each process store its own arrival time, cpu burst (not changeable)
 //finshed,turnaround time, wait time, preemption count, cpu_left... (changeable)
 #include <string>

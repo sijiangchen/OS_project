@@ -18,3 +18,11 @@ void Processes::print() {
         itr->print();
     }
 }
+
+Process Processes::operator[](int i) {
+    return this->processes[i];
+}
+
+int Processes::size() {
+    return this->processes.size();
+}

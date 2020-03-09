@@ -1,8 +1,10 @@
 #include <iostream>
-
 #include <string>
 #include <deque>
+#ifndef PROCESS_H
+#define PROCESS_H
 #include "Process.h"
+#endif
 using namespace std;
 
 class ReadyQueue{
@@ -18,6 +20,8 @@ public:
 
     //accessors
     bool isEmpty();
+    int size();
+    Process operator[](int i);
 
 private:
     deque<Process> readyQueue;

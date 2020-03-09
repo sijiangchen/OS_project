@@ -87,9 +87,17 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
     //In SJF, processes are stored in the ready queue in order of priority based on their CPU burst times.
     // More specifically, the process with the shortest CPU burst time will be selected as the next process
     // executed by the CPU.
+    cout<<"sjf"<<endl;
     Output ret("SJF");
-    ReadyQueue ();
+    ReadyQueue rq;
 
+    for (int i = 0; i < processes.size(); ++i) {
+        processes[i].print();
+    }
+    rq.push_back(processes[0]);
+    rq[0].print();
+
+    ret.addContextSwitch();
     return ret;
 };
 
