@@ -19,6 +19,7 @@ public:
     void clear();
 
     //accessors
+    void print();
     bool isEmpty();
     int size();
     Process operator[](int i);

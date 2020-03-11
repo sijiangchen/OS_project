@@ -74,6 +74,7 @@ Processes CreateProcesses(Argument argv) {
             }while(randomResult>upperBound);
             temp.addIOTime((int)ceil(randomResult));
         }
+        temp.setAlpha(argv.getAlpha());
         ret.add(temp);
         currentName++;
     }
@@ -91,13 +92,7 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
     Output ret("SJF");
     ReadyQueue rq;
 
-    for (int i = 0; i < processes.size(); ++i) {
-        processes[i].print();
-    }
-    rq.push_back(processes[0]);
-    rq[0].print();
 
-    ret.addContextSwitch();
     return ret;
 };
 
@@ -139,6 +134,8 @@ Output RoundRobin(Processes processes, Argument argv) {
 };
 
 int main(int argc, char *argv[]) {
+
+
     //input and process creation
     Argument arguments = ValidateInput(argc,argv);
     Processes processes = CreateProcesses(arguments);
@@ -156,8 +153,6 @@ int main(int argc, char *argv[]) {
     //li
     CreateOutputs(sjf, srt, fcfs, rr);
     /* exp-random.c */
-
-
 
 
     return 0;

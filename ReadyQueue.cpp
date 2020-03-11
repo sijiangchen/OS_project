@@ -43,3 +43,22 @@ int ReadyQueue::size() {
     return this->readyQueue.size();
 }
 
+void ReadyQueue::print() {
+    if(this->readyQueue.size()==0){
+        cout<<"[Q <empty>]"<<endl;
+    }else{
+        cout<<"[Q ";
+
+        for (int i = 0; i < this->readyQueue.size(); ++i) {
+            if(i+1==this->readyQueue.size()){
+                cout<<this->readyQueue[i].getName()<<"]"<<endl;
+            }else{
+                cout<<this->readyQueue[i].getName()<<" ";
+
+            }
+        }
+
+    }
+
+}
+
