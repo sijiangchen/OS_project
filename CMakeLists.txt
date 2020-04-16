@@ -9,4 +9,4 @@ add_executable(os main.cpp
         Processes.cpp Processes.h
         Process.cpp Process.h
         ReadyQueue.cpp ReadyQueue.h
-        Output.cpp Output.h)
+        Output.cpp Output.h line.h line.cpp)

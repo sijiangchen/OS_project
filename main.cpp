@@ -16,6 +16,7 @@
 #include "Processes.h"
 #include "ReadyQueue.h"
 #include "Output.h"
+#include "line.h"
 
 using namespace std;
 
@@ -98,10 +99,12 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
     }
     cout<<"time 0ms: Simulator started for SJF [Q <empty>]"<<endl;
 
+    vector<line> lines;
     //
     int timeline=0;
     ReadyQueue rq;
 //
+    bool cpu_free=true;
     while(processes.size()!=0){
         //check for cpu burst completion
             //recalculate tau
@@ -112,15 +115,35 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
 
         //io burst completion
         //new process arrivals
-
+        for (int i = 0; i < processes.size(); ++i) {
+            if(processes[i].getArrivalTime()==timeline){
+                string temp="time "+to_string(timeline)+"ms: Process "+
+                processes[i].getName()+" (tau "+to_string(processes[i].getTau())+
+                "ms) arrived; added to ready queue ";
+                line l(temp,timeline);
+                lines.push_back(l);
+                rq.sjf_insert(processes[i]);
+                cout<<"size of rq: "<<rq.size()<<endl;
+//                rq.debug();
+                break;
+            }
+        }
         //check cpu free or not
+        if(cpu_free){
+            Process shortest=rq.getShortestJob();
+//            shortest.print();
+            cpu_free=false;
+        }
         //check for shortest process in ready queue
 
-
+        if(timeline>=10000)break;
         timeline++;
     }
 
-
+//    for (int j = 0; j < lines.size(); ++j) {
+//        lines[j].printl();
+//    }
+//
 
 
     return ret;
