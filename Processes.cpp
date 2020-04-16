@@ -19,10 +19,25 @@ void Processes::print() {
     }
 }
 
-Process Processes::operator[](int i) {
+Process& Processes::operator[](int i) {
     return this->processes[i];
 }
 
 int Processes::size() {
     return this->processes.size();
+}
+
+void Processes::remove(Process process) {
+    deque<Process> temp;
+
+    for (int i = 0; i < this->size(); ++i) {
+        if(this->processes[i].getName()!=process.getName()){
+            temp.push_back(this->processes[i]);
+        }
+    }
+    this->processes.clear();
+    for (int j = 0; j < temp.size(); ++j) {
+        this->processes.push_back(temp[j]);
+    }
+
 }

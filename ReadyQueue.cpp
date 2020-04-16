@@ -35,7 +35,7 @@ void ReadyQueue::clear() {
     this->readyQueue.clear();
 }
 
-Process ReadyQueue::operator[](int i) {
+Process& ReadyQueue::operator[](int i) {
     return this->readyQueue[i];
 }
 
@@ -58,6 +58,33 @@ void ReadyQueue::print() {
             }
         }
 
+    }
+
+}
+
+Process& ReadyQueue::getShortestJob() {
+    Process ret;
+    int min=-1;
+    for (int i = 0; i < this->readyQueue.size(); ++i) {
+        if(i==0 || readyQueue[i].getTau()<min){
+            ret=this->readyQueue[i];
+            min=ret.getTau();
+        }
+    }
+    return ret;
+}
+
+void ReadyQueue::removeProcess(Process p) {
+    deque<Process> temp;
+
+    for (int i = 0; i < this->readyQueue.size(); ++i) {
+        if(this->readyQueue[i].getName()!=p.getName()){
+            temp.push_back(this->readyQueue[i]);
+        }
+    }
+    this->readyQueue.clear();
+    for (int j = 0; j < temp.size(); ++j) {
+        this->readyQueue.push_back(temp[j]);
     }
 
 }

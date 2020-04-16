@@ -35,15 +35,15 @@ int main()
 
     for ( int i = 0 ; i < iterations ; i++ )
     {
-        double lambda = 0.001;  /* average should be 1/lambda ==> 1000 */
+        double lambda = 0.01;  /* average should be 1/lambda ==> 1000 */
 
         double r = drand48();   /* uniform dist [0.00,1.00) -- also check out random() */
         double x = -log( r ) / lambda;  /* log() is natural log */
 
         /* avoid values that are far down the "long tail" of the distribution */
-        if ( x > 8000 ) { i--; continue; }
+        if ( x > 256 ) { i--; continue; }
 
-        if ( i < 30){
+        if ( i < 40){
 
             printf( "r is %lf\n", r );
             printf( "x is %lf\n", x );

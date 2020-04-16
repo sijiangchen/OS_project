@@ -10,7 +10,7 @@ using namespace std;
 class Process{
 public:
     Process();
-    Process(char n,int time,int number);
+    Process(char n,int time,int number,double lambda,double alpha);
 
     //accessors
     bool isFinished();
@@ -18,10 +18,13 @@ public:
     int getCurrentBurstIndex();
     int getCurrentIOIndex();
     int getCPUTime(int index);
+    int getCPUTime();
     int getIOTime(int index);
+    int getIOTime();
     int getArrivalTime();
     int getNumBurst();
-    int getAlpha();
+    double getAlpha();
+    int getTau();
     string getName();
 
     //modifiers
@@ -29,12 +32,14 @@ public:
     void addIOTime(int i);
     void setFinished();
     void setBlocked();
-    void setAlpha(double a);
     void unblocked();
+    void setAlpha(double a);
     //use negative number for - operation
     void updateCPUTime(int index, int time);
     void updateIOTime(int index, int time);
-
+    void updateTau();
+    void increaseCurrentCPUBurstIndex();
+    void increaseCurrentIOIndex();
 
     //debugger
     void print();
@@ -46,7 +51,8 @@ private:
     int numBurst;
     int currentBurstIndex;
     int currentIOIndex;
-    int alpha;
+    double alpha;
+    int tau;
     deque<int> CPUTime;
     deque<int> IOTime;
 

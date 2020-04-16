@@ -16,15 +16,18 @@ Process::Process() {
     currentIOIndex=0;
 }
 
-Process::Process(char n,int time,int number) {
+Process::Process(char n,int time,int number,double lambda,double alpha) {
     this->name[0]=n;
     this->name[1]='\0';
     this->numBurst=number;
     this->is_finished=false;
     this->is_blocked=false;
     this->arrivalTime=time;
-    currentBurstIndex=0;
-    currentIOIndex=0;
+    this->currentBurstIndex=0;
+    this->currentIOIndex=0;
+    //todo idk why have to minus 1 here, but that give correct result
+    this->tau=(int)ceil(1/lambda)-1;
+    this->alpha=alpha;
 }
 
 void Process::addCPUTime(int i) {
@@ -48,6 +51,8 @@ void Process::print() {
             cout<<"cpu time : "<<*itr1++<<endl;
             cout<<"io  time : "<<*itr2++<<endl;
         }
+        cout<<"tau : "<<this->getTau()<<endl;
+        this->updateTau();
     }
 
 }
@@ -113,7 +118,36 @@ int Process::getNumBurst() {
     return this->numBurst;
 }
 
-int Process::getAlpha() {
+double Process::getAlpha() {
     return this->alpha;
+}
+
+void Process::updateTau() {
+
+    double a=alpha*CPUTime[currentBurstIndex];
+    double b=(1-alpha)*tau;
+
+    double res=a+b;
+
+    this->tau=(int)ceil(res);
+}
+
+int Process::getTau() {
+    return this->tau;
+}
+
+void Process::increaseCurrentCPUBurstIndex() {
+    this->currentBurstIndex++;
+}
+void Process::increaseCurrentIOIndex() {
+    this->currentIOIndex++;
+}
+
+int Process::getCPUTime() {
+    return this->CPUTime[currentBurstIndex];
+}
+
+int Process::getIOTime() {
+    return this->IOTime[currentIOIndex];
 }
 

@@ -12,10 +12,10 @@ public:
 
     //modifiers
     void add(Process process);
-
+    void remove(Process process);
 
     //accessors
-    Process operator[](int i);
+    Process& operator[](int i);
     int size();
 
     //FOR DEBUG USE

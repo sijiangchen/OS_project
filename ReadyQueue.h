@@ -17,12 +17,14 @@ public:
     void pop_front();
     void pop_back();
     void clear();
+    void removeProcess(Process p);
 
     //accessors
     void print();
     bool isEmpty();
     int size();
-    Process operator[](int i);
+    Process& operator[](int i);
+    Process& getShortestJob();
 
 private:
     deque<Process> readyQueue;

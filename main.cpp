@@ -58,7 +58,7 @@ Processes CreateProcesses(Argument argv) {
         }while(randomResult>upperBound);
 
         int cpuNumber=(int)trunc(getNextRandomNumber()*100)+1;
-        Process temp(currentName,(int)floor(randomResult),cpuNumber);
+        Process temp(currentName,(int)floor(randomResult),cpuNumber,lambda,argv.getAlpha());
         for (int j = 0; j < cpuNumber; ++j) {
             do{
                 random=getNextRandomNumber();
@@ -74,7 +74,6 @@ Processes CreateProcesses(Argument argv) {
             }while(randomResult>upperBound);
             temp.addIOTime((int)ceil(randomResult));
         }
-        temp.setAlpha(argv.getAlpha());
         ret.add(temp);
         currentName++;
     }
@@ -88,9 +87,40 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
     //In SJF, processes are stored in the ready queue in order of priority based on their CPU burst times.
     // More specifically, the process with the shortest CPU burst time will be selected as the next process
     // executed by the CPU.
-    cout<<"sjf"<<endl;
     Output ret("SJF");
+    //print initial processes arrival time and cpu burst count and tau
+    for (int i = 0; i < processes.size(); ++i) {
+//        processes[i].print();
+        cout<<"Process "<<processes[i].getName()
+        <<" [NEW] (arrival time "<<processes[i].getArrivalTime()
+        <<" ms) "<<processes[i].getNumBurst()<<" CPU bursts (tau "<<processes[i].getTau()
+        <<"ms)"<<endl;
+    }
+    cout<<"time 0ms: Simulator started for SJF [Q <empty>]"<<endl;
+
+    //
+    int timeline=0;
     ReadyQueue rq;
+//
+    while(processes.size()!=0){
+        //check for cpu burst completion
+            //recalculate tau
+            //switch out
+                //will block on io
+                //terminated
+
+
+        //io burst completion
+        //new process arrivals
+
+        //check cpu free or not
+        //check for shortest process in ready queue
+
+
+        timeline++;
+    }
+
+
 
 
     return ret;
@@ -139,6 +169,7 @@ int main(int argc, char *argv[]) {
     //input and process creation
     Argument arguments = ValidateInput(argc,argv);
     Processes processes = CreateProcesses(arguments);
+
     Output sjf = ShortestJobFirst(processes, arguments);
     processes = CreateProcesses(arguments);
     Output srt = ShortestRemainingTime(processes, arguments);
