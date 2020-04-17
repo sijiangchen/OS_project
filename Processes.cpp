@@ -41,3 +41,11 @@ void Processes::remove(Process process) {
     }
 
 }
+
+void Processes::replace(Process process) {
+    for (int i = 0; i < this->size(); ++i) {
+        if(this->processes[i].getName()==process.getName()){
+            this->processes[i]=process;
+        }
+    }
+}

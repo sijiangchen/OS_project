@@ -13,6 +13,7 @@ public:
     //modifiers
     void add(Process process);
     void remove(Process process);
+    void replace(Process process);
 
     //accessors
     Process& operator[](int i);

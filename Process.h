@@ -30,6 +30,7 @@ public:
     int getTau();
     string getName();
     int getNextIOFinishTime()const{return next_io_finish_time;}
+    int getNextCPUFinishTime()const{return next_cpu_finish_time;}
     int getBurstTime()const{return burst_time;} //total burst time
     int getWaitTime()const{return wait_time;}    //total wait time
     int getTurnAroundTime()const{return turn_around_time;} //total turn around time
@@ -52,6 +53,7 @@ public:
     void increaseCurrentCPUBurstIndex();
     void increaseCurrentIOIndex();
     void setNextIOFinishTime(int time);
+    void setNextCPUFinishTime(int time);
     void addBurstTime(int time);
     void addWaitTime(int time);
     void addTurnAroundTime(int time);
@@ -74,6 +76,7 @@ private:
     deque<int> CPUTime;
     deque<int> IOTime;
     int next_io_finish_time;
+    int next_cpu_finish_time;
     int burst_time;
     int wait_time;
     int turn_around_time;

@@ -9,18 +9,21 @@
 #include <iostream>
 using namespace std;
 
-class line {
+class Line {
 public:
-    line();
-    line(string l,int t);
+    Line();
+    Line(string l,int t,string type);
     void add(string s);
     void printl();
-    void print();
+
     void clear();
 
+    int getTime(){ return time;};
+    string getType(){ return type;};
 private:
     int time=0;
-    string data="";
+    string data;
+    string type;
 };
 
 

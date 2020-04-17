@@ -35,6 +35,9 @@ Process::Process(char n,int time,int number,double lambda,double alpha) {
     this->currentIOIndex=0;
     //todo idk why have to minus 1 here, but that give correct result
     this->tau=(int)ceil(1/lambda)-1;
+    if(this->tau==999){
+        this->tau+=1;
+    }
     this->alpha=alpha;
     this->next_io_finish_time=0;
     this->burst_time=0;
@@ -196,5 +199,9 @@ void Process::addWaitTime(int time){
 
 void Process::addTurnAroundTime(int time){
     this->turn_around_time+=time;
+}
+
+void Process::setNextCPUFinishTime(int time) {
+    this->next_cpu_finish_time=time;
 }
 

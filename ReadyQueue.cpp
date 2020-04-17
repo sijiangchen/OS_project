@@ -3,6 +3,9 @@
 //
 
 #include "ReadyQueue.h"
+#include <vector>
+#include <algorithm>
+
 
 void ReadyQueue::push_back(Process p) {
     this->readyQueue.push_back(p);
@@ -64,7 +67,7 @@ void ReadyQueue::print() {
 
 Process ReadyQueue::getShortestJob() {
     Process ret;
-    int min = 10000;
+    int min = 0;
     for (int i = 0; i < this->readyQueue.size(); ++i) {
         if (i == 0 || readyQueue[i].getTau() < min) {
             ret = this->readyQueue[i];
@@ -89,42 +92,39 @@ void ReadyQueue::removeProcess(Process p) {
 
 }
 
-
+bool mysort(Process p1, Process p2) {
+    if(p1.getTau() < p2.getTau()){
+        return true;
+    }else if(p1.getTau()==p2.getTau()){
+        if(p1.getName()<p2.getName()){
+            return true;
+        }else{
+            return false;
+        }
+    }else{
+        return false;
+    }
+}
 
 void ReadyQueue::sjf_insert(Process p) {
-    deque<Process> temp;
     bool inserted=false;
     int i;
     if(readyQueue.size()==0){
         readyQueue.push_back(p);
         return;
-    }
-    for ( i = 0; i < readyQueue.size(); ++i) {
-        if(!inserted){
-            if(p.getTau()<readyQueue[i].getTau()){
-                temp.push_back(p);
-                temp.push_back(readyQueue[i]);
-                break;
-            }else if (p.getTau()==readyQueue[i].getTau()){
-                if(p.getName()<readyQueue[i].getName()){
-                    temp.push_back(p);
-                    temp.push_back(readyQueue[i]);
-                    break;
-                }else{
-                    temp.push_back(readyQueue[i]);
-                    temp.push_back(p);
-                }
-            }else{
-                temp.push_back(readyQueue[i]);
-            }
-        }else{
-            break;
+    }else{
+        std::vector<Process> temp;
+        for (int j = 0; j < readyQueue.size(); ++j) {
+            temp.push_back(readyQueue[j]);
         }
+        temp.push_back(p);
+        sort(temp.begin(),temp.end(),mysort);
+        readyQueue.clear();
+        for (int k = 0; k < temp.size(); ++k) {
+            readyQueue.push_back(temp[k]);
+        }
+
     }
-    for (int j = i+1; j < readyQueue.size(); ++j) {
-        temp.push_back(readyQueue[j]);
-    }
-    readyQueue.clear();
 
 }
 
@@ -133,5 +133,32 @@ void ReadyQueue::debug() {
         readyQueue[i].print();
     }
 
+}
+
+void ReadyQueue::swap(Process &p1, Process &p2) {
+    Process t=p1;
+    p1=p2;
+    p2=t;
+}
+
+string ReadyQueue::print_string() {
+    string ret;
+    if (this->readyQueue.size() == 0) {
+        ret+= "[Q <empty>]" ;
+    } else {
+        ret+= "[Q ";
+
+        for (int i = 0; i < this->readyQueue.size(); ++i) {
+            if (i + 1 == this->readyQueue.size()) {
+                ret+=this->readyQueue[i].getName();
+                ret+="]";
+            } else {
+                ret+=this->readyQueue[i].getName();
+                ret+=" ";
+            }
+        }
+
+    }
+    return ret;
 }
 

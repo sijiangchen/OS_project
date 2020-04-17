@@ -13,6 +13,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
+#include <algorithm>
 #include "Process.h"
 #include "Argument.h"
 #include "Processes.h"
@@ -86,6 +87,26 @@ Processes CreateProcesses(Argument argv) {
 
 //return Output on success
 //edit output.debug for debugging
+
+bool sjf_sort(Line l1, Line l2) {
+    if(l1.getTime()<l2.getTime()){
+        return true;
+    }else if(l1.getTime()>l2.getTime()){
+        return false;
+    }else if (l1.getTime()==l2.getTime()){
+        if(l1.getType()=="finishIO"&&l2.getType()=="startCPU"){
+            return true;
+        }else if(l1.getType()=="finishIO"){
+            return true;
+        }else if(l1.getType()=="arrive"){
+            return true;
+        }else if(l1.getType()=="arrive"){
+            return true;
+        }
+
+
+    }
+}
 Output ShortestJobFirst(Processes processes, Argument argv) {
     //In SJF, processes are stored in the ready queue in order of priority based on their CPU burst times.
     // More specifically, the process with the shortest CPU burst time will be selected as the next process
@@ -95,57 +116,200 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
     for (int i = 0; i < processes.size(); ++i) {
 //        processes[i].print();
         cout<<"Process "<<processes[i].getName()
-        <<" [NEW] (arrival time "<<processes[i].getArrivalTime()
-        <<" ms) "<<processes[i].getNumBurst()<<" CPU bursts (tau "<<processes[i].getTau()
-        <<"ms)"<<endl;
+            <<" [NEW] (arrival time "<<processes[i].getArrivalTime()
+            <<" ms) "<<processes[i].getNumBurst();
+        if(processes[i].getNumBurst()==1){
+            cout<<" CPU burst (tau ";
+        }else{
+            cout<<" CPU bursts (tau ";
+        }
+        cout<<processes[i].getTau()
+            <<"ms)"<<endl;
     }
     cout<<"time 0ms: Simulator started for SJF [Q <empty>]"<<endl;
 
-    vector<line> lines;
+    vector<Line> lines;
     //
     int timeline=0;
     ReadyQueue rq;
 //
+    int counter=0;
+    int switch_time=0;
     bool cpu_free=true;
+    Process future;
     while(processes.size()!=0){
         //check for cpu burst completion
-            //recalculate tau
-            //switch out
-                //will block on io
-                //terminated
+        //recalculate tau
+        //switch out
+        //will block on io
+        //terminated
 
 
+        if(!cpu_free){
+            for (int i = 0; i < processes.size(); ++i) {
+                if(processes[i].isRunning()){
+                    if(timeline==processes[i].getNextCPUFinishTime()){
+                        processes[i].unRunning();
+                        processes[i].setBlocked();
+                        string s;
+                        s+="Process ";
+                        s+=processes[i].getName();
+                        int left=processes[i].getNumBurst()-(processes[i].getCurrentBurstIndex()+1);
+                        if(left==0){
+                            s+=" terminated ";
+                            s+=rq.print_string();
+                            rq.removeProcess(processes[i]);
+                            processes.remove(processes[i]);
+                            lines.push_back(Line(s,timeline,"terminated"));
+                            cpu_free=true;
+                            switch_time+=2;
+                            break;
+                        }
+                        s+=+" (tau ";
+                        s+=to_string(processes[i].getTau());
+                        s+="ms) completed a CPU burst; ";
+                        s+=to_string(left);
+                        if(left==1){
+                            s+=" burst to go ";
+                        }else{
+                            s+=" bursts to go ";
+                        }
+
+                        s+=rq.print_string();
+                        Line l(s,timeline,"finishCPU");
+                        lines.push_back(l);
+                        processes[i].updateTau();
+                        s.clear();
+                        s+="Recalculated tau = ";
+                        s+=to_string(processes[i].getTau());
+                        s+="ms for process ";
+                        s+=processes[i].getName();
+                        s+=" ";
+                        s+=rq.print_string();
+                        Line l2(s,timeline,"recalculatedTau");
+                        lines.push_back(l2);
+                        s.clear();
+                        s+="Process ";
+                        s+=processes[i].getName();
+                        s+=" switching out of CPU; will block on I/O until time ";
+                        s+=to_string(timeline+processes[i].getIOTime()+2);
+                        processes[i].setNextIOFinishTime(timeline+processes[i].getIOTime()+2);
+                        s+="ms ";
+                        s+=rq.print_string();
+                        Line l3(s,timeline,"finishIO");
+                        lines.push_back(l3);
+                        cpu_free=true;
+                        switch_time=2;
+                        processes[i].increaseCurrentCPUBurstIndex();
+                    }
+
+                }
+            }
+        }
         //io burst completion
+        for (int i = 0; i < processes.size(); ++i) {
+            if(timeline==0){
+                break;
+            }
+            if(processes[i].getNextIOFinishTime()==timeline){
+                string name=processes[i].getName();
+                string tau=to_string(processes[i].getTau());
+                processes[i].unBlocked();
+                processes[i].increaseCurrentIOIndex();
+                rq.sjf_insert(processes[i]);
+                string q=rq.print_string();
+
+                string temp="Process ";
+                temp+=name;
+                temp+=" (tau ";
+                temp+=tau;
+                temp+="ms) completed I/O; added to ready queue ";
+                temp+=q;
+                Line l(temp,timeline,"finishIO");
+                lines.push_back(l);
+            }
+        }
         //new process arrivals
         for (int i = 0; i < processes.size(); ++i) {
             if(processes[i].getArrivalTime()==timeline){
-                string temp="time "+to_string(timeline)+"ms: Process "+
-                processes[i].getName()+" (tau "+to_string(processes[i].getTau())+
-                "ms) arrived; added to ready queue ";
-                line l(temp,timeline);
-                lines.push_back(l);
+                string temp="Process "+
+                            processes[i].getName()+" (tau "+to_string(processes[i].getTau())+
+                            "ms) arrived; added to ready queue ";
+                Line l(temp,timeline,"arrive");
                 rq.sjf_insert(processes[i]);
-                cout<<"size of rq: "<<rq.size()<<endl;
-//                rq.debug();
-                break;
+                l.add(rq.print_string());
+                lines.push_back(l);
             }
         }
+
         //check cpu free or not
-        if(cpu_free){
-            Process shortest=rq.getShortestJob();
-//            shortest.print();
-            cpu_free=false;
+        if(cpu_free and switch_time==0){
+            //check for shortest process in ready queue
+            if(rq.size()!=0){
+
+                Process shortest=rq[0];
+                shortest.setRunning();
+                shortest.setNextCPUFinishTime(timeline+2+shortest.getCPUTime(shortest.getCurrentBurstIndex()));
+                string temp;
+                temp+="Process ";
+                temp+=shortest.getName();
+                temp+=" (tau ";
+                temp+=to_string(shortest.getTau());
+                temp+="ms) started using the CPU for ";
+                temp+=to_string(shortest.getCPUTime(shortest.getCurrentBurstIndex()));
+                temp+="ms burst ";
+                processes.replace(shortest);
+                rq.removeProcess(shortest);
+                //check if any io will finish in two future seconds
+                int now=timeline;
+                vector<int> index;
+                for (int i = 0; i < processes.size(); ++i) {
+                    int finishtime=processes[i].getNextIOFinishTime();
+                    if(finishtime==(now+1)){
+                        rq.sjf_insert(processes[i]);
+                        index.push_back(i);
+                    }
+                }
+
+                temp+=rq.print_string();
+                for (int j = 0; j < index.size(); ++j) {
+                    rq.removeProcess(processes[index[j]]);
+                }
+
+                Line l(temp,timeline+2,"startCPU");
+                lines.push_back(l);
+
+                cpu_free=false;
+            }
         }
-        //check for shortest process in ready queue
 
-        if(timeline>=10000)break;
+
+
+        if(switch_time!=0){
+            switch_time--;
+        }
         timeline++;
+        counter++;
     }
+    string t;
+    t+="Simulator ended for SJF [Q <empty>]";
+    Line last(t,timeline+1,"finish");
+    lines.push_back(last);
 
-//    for (int j = 0; j < lines.size(); ++j) {
-//        lines[j].printl();
-//    }
+//    sort(lines.begin(),lines.end(),sjf_sort);
+    int max=lines.size();
+    for (int j = 0; j < max; ++j) {
+        if(j+1!= max&&lines[j].getTime()>lines[j+1].getTime()){
+            lines[j+1].printl();
+            lines[j].printl();
+            j++;
+        }else{
+            lines[j].printl();
+
+        }
+    }
 //
+    cout<<endl;
 
 
     return ret;
@@ -165,7 +329,7 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
 
 //this function is used to simulate every millisecond of each process
 void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
-    
+
     int num_process=processes.size();
     for(int i=0;i<num_process;++i){
         Process p=processes[i];
@@ -174,7 +338,7 @@ void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
         if(p.isWaiting()){
             p.addWaitTime(1);
         }
-        
+
         if(p.getCurrentBurstIndex()==0){
             if(p.getArrivalTime()==timeline){
                 rq.push_back(p);
@@ -182,20 +346,20 @@ void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
                 cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" arrived; added to ready queue ";
                 rq.print();
             }
-                  }
-        
-               //finish i/o burst and enter the ready queue
-                 
-               if(p.isBlocked()&&p.getNextIOFinishTime()==timeline){
-                  p.setWaiting();
-                  p.unBlocked();
-                  rq.push_back(p);
-                  cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
-                  rq.print();
-               }
-   
+        }
+
+        //finish i/o burst and enter the ready queue
+
+        if(p.isBlocked()&&p.getNextIOFinishTime()==timeline){
+            p.setWaiting();
+            p.unBlocked();
+            rq.push_back(p);
+            cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
+            rq.print();
+        }
+
         processes[i]=p;
-}
+    }
 }
 
 Output FirstComeFirstServed(Processes processes, Argument argv) {
@@ -208,9 +372,9 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
     int timeline=0;
     cout<<"time "<<timeline<<"ms: Simulator started for FCFS ";
     rq.print();
-   
+
     int num_process=processes.size();
-    
+
     //set CPU state variables
     bool isrunning=false;
     //bool iscontextswitching=false;
@@ -221,15 +385,15 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
     Process* current_process;
     //initialize the ready queue
     EverySecond(processes, rq, timeline);
-    
+
     //while there are unfinished processes
     while(num_process_finished<num_process){
         if(isidle){
             //if there is a process in the ready queue
             if(rq.size()!=0){
                 for(int i=0;i<num_process;++i){
-                   if(processes[i].getName()==rq[0].getName())
-                       current_process=&processes[i];
+                    if(processes[i].getName()==rq[0].getName())
+                        current_process=&processes[i];
                 }
                 rq.pop_front();//remove the current process from the ready queue
                 bursttime=current_process->getCPUTime(current_process->getCurrentBurstIndex());
@@ -237,33 +401,33 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
                 isidle=false;
                 current_process->unWaiting();
                 //cpu context switch in
-        
+
                 for(int t=1;t<=cs_time/2-1;++t){
                     timeline++;
                     EverySecond(processes,rq, timeline);
-                     
+
                 }
                 timeline++;
                 cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" started using the CPU for "<<bursttime<<"ms burst ";
                 rq.print();
                 EverySecond(processes,rq, timeline);
-               
-              //cpu burst
-               
+
+                //cpu burst
+
                 isrunning=true;
                 current_process->setRunning();
                 ret.addContextSwitch();
                 ret.addCPUBurstTime(bursttime);
-               
+
                 for(int t=1;t<=bursttime-1;++t){
-                   timeline++;
-                   EverySecond(processes, rq, timeline);
+                    timeline++;
+                    EverySecond(processes, rq, timeline);
                 }
                 timeline++;
                 //finish cpu burst
                 isrunning=false;
                 current_process->unRunning();
-                
+
                 //calculate the finished processes
                 if(current_process->getCurrentBurstIndex()==current_process->getNumBurst()-1){
                     ret.addWaitTime(current_process->getWaitTime());
@@ -273,7 +437,7 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
                     num_process_finished++;
                 }
                 else{
-                  //enter the i/o subsystem
+                    //enter the i/o subsystem
                     int num_burst_to_go=current_process->getNumBurst()-1-current_process->getCurrentBurstIndex();
                     if(num_burst_to_go==1)
                         cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" completed a CPU burst; "<<num_burst_to_go<<" burst to go ";
@@ -288,33 +452,33 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
                     current_process->setBlocked();
                     current_process->increaseCurrentIOIndex();
                 }
-                
+
                 //cpu context switch out
-                   
-                   EverySecond(processes, rq, timeline);
-                    for(int t=1;t<=cs_time/2;++t){
-                       timeline++;
-                       EverySecond(processes, rq, timeline);
-                         }
-                     
-                    isidle=true;
-                
-        }
-            //if the ready queue is empty
+
+                EverySecond(processes, rq, timeline);
+                for(int t=1;t<=cs_time/2;++t){
+                    timeline++;
+                    EverySecond(processes, rq, timeline);
+                }
+
+                isidle=true;
+
+            }
+                //if the ready queue is empty
             else{
                 ++timeline;
                 EverySecond(processes, rq, timeline);
-                 
+
             }
-                    
-}
+
+        }
     }
-    
+
     int total_turnaround=ret.getCPUBurstTime()+ret.getWaitTime()+ret.getContextSwitch()*cs_time;
     ret.addTurnaroundTime(total_turnaround);
     cout<<"time "<<timeline<<"ms: Simulator ended for FCFS ";
     rq.print();
-    
+
     return ret;
 };
 
@@ -348,25 +512,26 @@ int main(int argc, char *argv[]) {
     Output srt = ShortestRemainingTime(processes, arguments);
 
     //chen
-    processes = CreateProcesses(arguments);
-     for(int i=0;i<processes.size();++i){
-        int num_burst=processes[i].getNumBurst();
-        if(num_burst==1)
-        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
-        else
-        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
-    }
-    
-    Output fcfs = FirstComeFirstServed(processes, arguments);
-    out_text<<"Algorithm FCFS"<<endl;
-    fcfs.print(out_text);
+//    processes = CreateProcesses(arguments);
+//     for(int i=0;i<processes.size();++i){
+//        int num_burst=processes[i].getNumBurst();
+//        if(num_burst==1)
+//        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
+//        else
+//        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
+//    }
+//
+//    Output fcfs = FirstComeFirstServed(processes, arguments);
+//    out_text<<"Algorithm FCFS"<<endl;
+//    fcfs.print(out_text);
+//
 
     //huang
     processes = CreateProcesses(arguments);
     Output rr = RoundRobin(processes, arguments);
     //result
     //li
-    CreateOutputs(sjf, srt, fcfs, rr);
+//    CreateOutputs(sjf, srt, fcfs, rr);
     /* exp-random.c */
 
 

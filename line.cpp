@@ -6,27 +6,27 @@
 #include <string>
 using namespace std;
 
-line::line(string l,int t) {
+Line::Line(string l,int t,string type) {
     this->data=l;
     this->time=t;
+    this->type=type;
 }
 
-line::line() {
+Line::Line() {
 
 }
 
-void line::add(string s) {
-    this->data+s;
+void Line::add(string s) {
+    this->data+=s;
 }
 
-void line::print() {
-    cout<<this->data;
-}
 
-void line::clear() {
+
+void Line::clear() {
     this->data="";
 }
 
-void line::printl() {
-    cout<<this->data<<endl;
+void Line::printl() {
+    cout<<"time "<<time<<"ms: "<<this->data<<endl;
 }
+
