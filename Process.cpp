@@ -11,9 +11,15 @@ Process::Process() {
     name[1]='\0';
     is_finished=false;
     is_blocked=false;
+    is_waiting=false;
+    is_running=false;
     numBurst=0;
     currentBurstIndex=0;
     currentIOIndex=0;
+    next_io_finish_time=0;
+    burst_time=0;
+    wait_time=0;
+    turn_around_time=0;
 }
 
 Process::Process(char n,int time,int number,double lambda,double alpha) {
@@ -22,12 +28,18 @@ Process::Process(char n,int time,int number,double lambda,double alpha) {
     this->numBurst=number;
     this->is_finished=false;
     this->is_blocked=false;
+    this->is_waiting=false;
+    this->is_running=false;
     this->arrivalTime=time;
     this->currentBurstIndex=0;
     this->currentIOIndex=0;
     //todo idk why have to minus 1 here, but that give correct result
     this->tau=(int)ceil(1/lambda)-1;
     this->alpha=alpha;
+    this->next_io_finish_time=0;
+    this->burst_time=0;
+    this->wait_time=0;
+    this->turn_around_time=0;
 }
 
 void Process::addCPUTime(int i) {
@@ -69,10 +81,29 @@ void Process::setBlocked() {
     this->is_blocked=true;
 }
 
-void Process::unblocked() {
+
+void Process::setRunning(){
+    this->is_running=true;
+}
+
+void Process::setWaiting(){
+    this->is_waiting=true;
+}
+
+
+void Process::unBlocked() {
     this->is_blocked=false;
 
 }
+
+void Process::unWaiting(){
+    this->is_waiting=false;
+}
+
+void Process::unRunning(){
+    this->is_running=false;
+}
+
 
 int Process::getCurrentBurstIndex() {
     return this->currentBurstIndex;
@@ -149,5 +180,21 @@ int Process::getCPUTime() {
 
 int Process::getIOTime() {
     return this->IOTime[currentIOIndex];
+}
+
+void Process::setNextIOFinishTime(int time){
+    this->next_io_finish_time=time;
+}
+
+void Process::addBurstTime(int time){
+    this->burst_time+=time;
+}
+
+void Process::addWaitTime(int time){
+    this->wait_time+=time;
+}
+
+void Process::addTurnAroundTime(int time){
+    this->turn_around_time+=time;
 }
 
