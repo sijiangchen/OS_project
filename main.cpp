@@ -3,6 +3,7 @@
 //huangh10
 //chens32
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <random>
 #include <queue>
@@ -12,6 +13,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
+#include "Process.h"
 #include "Argument.h"
 #include "Processes.h"
 #include "ReadyQueue.h"
@@ -160,13 +162,159 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
     return ret;
 };
 
+
+//this function is used to simulate every millisecond of each process
+void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
+    
+    int num_process=processes.size();
+    for(int i=0;i<num_process;++i){
+        Process p=processes[i];
+        if(p.isFinished()) continue;
+        //the first time it arrives
+        if(p.isWaiting()){
+            p.addWaitTime(1);
+        }
+        
+        if(p.getCurrentBurstIndex()==0){
+            if(p.getArrivalTime()==timeline){
+                rq.push_back(p);
+                p.setWaiting();
+                cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" arrived; added to ready queue ";
+                rq.print();
+            }
+                  }
+        
+               //finish i/o burst and enter the ready queue
+                 
+               if(p.isBlocked()&&p.getNextIOFinishTime()==timeline){
+                  p.setWaiting();
+                  p.unBlocked();
+                  rq.push_back(p);
+                  cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
+                  rq.print();
+               }
+   
+        processes[i]=p;
+}
+}
+
 Output FirstComeFirstServed(Processes processes, Argument argv) {
     //The FCFS algorithm is a non-preemptive algorithm in which processes line up in the ready queue,
     // waiting to use the CPU. This is your baseline algorithm (and may be implemented as RR with an
     // infinite time slice).
     Output ret("FCFS");
-    ReadyQueue ();
-
+    int cs_time=argv.getContextSwitchTime();
+    ReadyQueue rq;
+    int timeline=0;
+    cout<<"time "<<timeline<<"ms: Simulator started for FCFS ";
+    rq.print();
+   
+    int num_process=processes.size();
+    
+    //set CPU state variables
+    bool isrunning=false;
+    //bool iscontextswitching=false;
+    bool isidle=true;
+    int bursttime=0;
+    int num_process_finished=0;
+    //int num_cs=0;  //number of context switches
+    Process* current_process;
+    //initialize the ready queue
+    EverySecond(processes, rq, timeline);
+    
+    //while there are unfinished processes
+    while(num_process_finished<num_process){
+        if(isidle){
+            //if there is a process in the ready queue
+            if(rq.size()!=0){
+                for(int i=0;i<num_process;++i){
+                   if(processes[i].getName()==rq[0].getName())
+                       current_process=&processes[i];
+                }
+                rq.pop_front();//remove the current process from the ready queue
+                bursttime=current_process->getCPUTime(current_process->getCurrentBurstIndex());
+                current_process->addBurstTime(bursttime);
+                isidle=false;
+                current_process->unWaiting();
+                //cpu context switch in
+        
+                for(int t=1;t<=cs_time/2-1;++t){
+                    timeline++;
+                    EverySecond(processes,rq, timeline);
+                     
+                }
+                timeline++;
+                cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" started using the CPU for "<<bursttime<<"ms burst ";
+                rq.print();
+                EverySecond(processes,rq, timeline);
+               
+              //cpu burst
+               
+                isrunning=true;
+                current_process->setRunning();
+                ret.addContextSwitch();
+                ret.addCPUBurstTime(bursttime);
+               
+                for(int t=1;t<=bursttime-1;++t){
+                   timeline++;
+                   EverySecond(processes, rq, timeline);
+                }
+                timeline++;
+                //finish cpu burst
+                isrunning=false;
+                current_process->unRunning();
+                
+                //calculate the finished processes
+                if(current_process->getCurrentBurstIndex()==current_process->getNumBurst()-1){
+                    ret.addWaitTime(current_process->getWaitTime());
+                    cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" terminated ";
+                    rq.print();
+                    current_process->setFinished();
+                    num_process_finished++;
+                }
+                else{
+                  //enter the i/o subsystem
+                    int num_burst_to_go=current_process->getNumBurst()-1-current_process->getCurrentBurstIndex();
+                    if(num_burst_to_go==1)
+                        cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" completed a CPU burst; "<<num_burst_to_go<<" burst to go ";
+                    else
+                        cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" completed a CPU burst; "<<num_burst_to_go<<" bursts to go ";
+                    rq.print();
+                    current_process->increaseCurrentCPUBurstIndex();
+                    int next_IO_time=current_process->getIOTime(current_process->getCurrentIOIndex());
+                    current_process->setNextIOFinishTime(timeline+next_IO_time+cs_time/2);
+                    cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" switching out of CPU; will block on I/O until time "<<current_process->getNextIOFinishTime()<<"ms ";
+                    rq.print();
+                    current_process->setBlocked();
+                    current_process->increaseCurrentIOIndex();
+                }
+                
+                //cpu context switch out
+                   
+                   EverySecond(processes, rq, timeline);
+                    for(int t=1;t<=cs_time/2;++t){
+                       timeline++;
+                       EverySecond(processes, rq, timeline);
+                         }
+                     
+                    isidle=true;
+                
+        }
+            //if the ready queue is empty
+            else{
+                ++timeline;
+                EverySecond(processes, rq, timeline);
+                 
+            }
+                    
+}
+    }
+    
+    int total_turnaround=ret.getCPUBurstTime()+ret.getWaitTime()+ret.getContextSwitch()*cs_time;
+    ret.addTurnaroundTime(total_turnaround);
+    cout<<"time "<<timeline<<"ms: Simulator ended for FCFS ";
+    rq.print();
+    
     return ret;
 };
 
@@ -187,7 +335,9 @@ Output RoundRobin(Processes processes, Argument argv) {
 };
 
 int main(int argc, char *argv[]) {
-
+    setvbuf( stdout, NULL, _IONBF, 0 );
+    //output file
+    ofstream out_text("simout.txt");
 
     //input and process creation
     Argument arguments = ValidateInput(argc,argv);
@@ -199,7 +349,18 @@ int main(int argc, char *argv[]) {
 
     //chen
     processes = CreateProcesses(arguments);
+     for(int i=0;i<processes.size();++i){
+        int num_burst=processes[i].getNumBurst();
+        if(num_burst==1)
+        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
+        else
+        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
+    }
+    
     Output fcfs = FirstComeFirstServed(processes, arguments);
+    out_text<<"Algorithm FCFS"<<endl;
+    fcfs.print(out_text);
+
     //huang
     processes = CreateProcesses(arguments);
     Output rr = RoundRobin(processes, arguments);
