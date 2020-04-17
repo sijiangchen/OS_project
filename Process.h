@@ -6,7 +6,8 @@
 #include <deque>
 using namespace std;
 
-
+#ifndef Process_h
+#define Process_h
 class Process{
 public:
     Process();
@@ -15,6 +16,8 @@ public:
     //accessors
     bool isFinished();
     bool isBlocked();
+    bool isRunning(){return is_running;}
+    bool isWaiting(){return is_waiting;}
     int getCurrentBurstIndex();
     int getCurrentIOIndex();
     int getCPUTime(int index);
@@ -26,13 +29,21 @@ public:
     double getAlpha();
     int getTau();
     string getName();
-
+    int getNextIOFinishTime()const{return next_io_finish_time;}
+    int getBurstTime()const{return burst_time;} //total burst time
+    int getWaitTime()const{return wait_time;}    //total wait time
+    int getTurnAroundTime()const{return turn_around_time;} //total turn around time
+    
     //modifiers
     void addCPUTime(int i);
     void addIOTime(int i);
     void setFinished();
     void setBlocked();
-    void unblocked();
+    void setRunning();
+    void setWaiting();
+    void unBlocked();
+    void unWaiting();
+    void unRunning();
     void setAlpha(double a);
     //use negative number for - operation
     void updateCPUTime(int index, int time);
@@ -40,6 +51,11 @@ public:
     void updateTau();
     void increaseCurrentCPUBurstIndex();
     void increaseCurrentIOIndex();
+    void setNextIOFinishTime(int time);
+    void addBurstTime(int time);
+    void addWaitTime(int time);
+    void addTurnAroundTime(int time);
+    
 
     //debugger
     void print();
@@ -47,6 +63,8 @@ private:
     char name[2];
     bool is_finished;
     bool is_blocked;
+    bool is_running;
+    bool is_waiting;
     int arrivalTime;
     int numBurst;
     int currentBurstIndex;
@@ -55,5 +73,11 @@ private:
     int tau;
     deque<int> CPUTime;
     deque<int> IOTime;
+    int next_io_finish_time;
+    int burst_time;
+    int wait_time;
+    int turn_around_time;
 
 };
+
+#endif
