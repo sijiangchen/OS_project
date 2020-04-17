@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
 
 using namespace std;
 
@@ -22,15 +23,17 @@ public:
     void addPreemption();
 
     //debugger
-    void print();
-
+    //void print();
+    
+    //output the summaries
+    ostream& print(ostream& out_str);
+    
 private:
     string name;
-    double CPUBurstTime=0;
-    double WaitTime=0;
-    double TurnaroundTime=0;
-    int contextSwitch=0;
-    int preemption=0;
-
+    double CPUBurstTime;
+    double WaitTime;
+    double TurnaroundTime;
+    int contextSwitch;
+    int preemption;
 
 };
