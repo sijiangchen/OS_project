@@ -33,8 +33,14 @@ double getGenerated(double r,double lambda){
 }
 
 
-void CreateOutputs(Output sjf, Output srt, Output fcfs, Output rr) {
+void CreateOutputs(Output sjf, Output srt, Output fcfs, Output rr, ofstream& out) {
     //create output.
+    out<<"Algorithm FCFS"<<endl;
+    fcfs.print(out);
+
+    out<<"Algorithm SRT"<<endl;
+    sjf.print(out);
+
 }
 
 Argument ValidateInput(int argc,char *argv[]) {
@@ -89,25 +95,6 @@ Processes CreateProcesses(Argument argv) {
 //return Output on success
 //edit output.debug for debugging
 
-bool sjf_sort(Line l1, Line l2) {
-    if(l1.getTime()<l2.getTime()){
-        return true;
-    }else if(l1.getTime()>l2.getTime()){
-        return false;
-    }else if (l1.getTime()==l2.getTime()){
-        if(l1.getType()=="finishIO"&&l2.getType()=="startCPU"){
-            return true;
-        }else if(l1.getType()=="finishIO"){
-            return true;
-        }else if(l1.getType()=="arrive"){
-            return true;
-        }else if(l1.getType()=="arrive"){
-            return true;
-        }
-
-
-    }
-}
 Output ShortestJobFirst(Processes processes, Argument argv) {
     //In SJF, processes are stored in the ready queue in order of priority based on their CPU burst times.
     // More specifically, the process with the shortest CPU burst time will be selected as the next process
@@ -145,7 +132,6 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
         //will block on io
         //terminated
 
-
         if(!cpu_free){
             for (int i = 0; i < processes.size(); ++i) {
                 if(processes[i].isRunning()){
@@ -157,13 +143,18 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
                         s+=processes[i].getName();
                         int left=processes[i].getNumBurst()-(processes[i].getCurrentBurstIndex()+1);
                         if(left==0){
+                            processes[i].addTurnAroundTime(timeline-processes[i].getArrivalTime()+0.5*argv.getContextSwitchTime());
                             s+=" terminated ";
                             s+=rq.print_string();
                             rq.removeProcess(processes[i]);
+                            ret.addWaitTime(processes[i].getWaitTime());
+                            ret.addCPUBurstTime(processes[i].getBurstTime());
+                            ret.addTurnaroundTime(processes[i].getTurnAroundTime());
                             processes.remove(processes[i]);
                             lines.push_back(Line(s,timeline,"terminated"));
                             cpu_free=true;
-                            switch_time+=2;
+
+                            switch_time+=argv.getContextSwitchTime()/2;
                             break;
                         }
                         s+=+" (tau ";
@@ -193,14 +184,14 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
                         s+="Process ";
                         s+=processes[i].getName();
                         s+=" switching out of CPU; will block on I/O until time ";
-                        s+=to_string(timeline+processes[i].getIOTime()+2);
-                        processes[i].setNextIOFinishTime(timeline+processes[i].getIOTime()+2);
+                        s+=to_string(timeline+processes[i].getIOTime()+argv.getContextSwitchTime()/2);
+                        processes[i].setNextIOFinishTime(timeline+processes[i].getIOTime()+argv.getContextSwitchTime()/2);
                         s+="ms ";
                         s+=rq.print_string();
                         Line l3(s,timeline,"finishIO");
                         lines.push_back(l3);
                         cpu_free=true;
-                        switch_time=2;
+                        switch_time=argv.getContextSwitchTime()/2;
                         processes[i].increaseCurrentCPUBurstIndex();
                     }
 
@@ -247,10 +238,12 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
         if(cpu_free and switch_time==0){
             //check for shortest process in ready queue
             if(rq.size()!=0){
-
+                ret.addContextSwitch();
                 Process shortest=rq[0];
+                shortest.addWaitTime(0.5*argv.getContextSwitchTime());
+                shortest.addBurstTime(shortest.getCPUTime(shortest.getCurrentBurstIndex()));
                 shortest.setRunning();
-                shortest.setNextCPUFinishTime(timeline+2+shortest.getCPUTime(shortest.getCurrentBurstIndex()));
+                shortest.setNextCPUFinishTime(timeline+argv.getContextSwitchTime()/2+shortest.getCPUTime(shortest.getCurrentBurstIndex()));
                 string temp;
                 temp+="Process ";
                 temp+=shortest.getName();
@@ -277,7 +270,7 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
                     rq.removeProcess(processes[index[j]]);
                 }
 
-                Line l(temp,timeline+2,"startCPU");
+                Line l(temp,timeline+argv.getContextSwitchTime()/2,"startCPU");
                 lines.push_back(l);
 
                 cpu_free=false;
@@ -291,6 +284,12 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
         }
         timeline++;
         counter++;
+
+        if(rq.size()!=0){
+            for (int i = 0; i < rq.size(); ++i) {
+                rq[i].addWaitTime(1);
+            }
+        }
     }
     string t;
     t+="Simulator ended for SJF [Q <empty>]";
@@ -309,9 +308,8 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
 
         }
     }
-//
-    cout<<endl;
 
+    cout<<endl;
 
     return ret;
 };
@@ -322,7 +320,11 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
     // the currently running process, a preemption occurs. When such a preemption occurs, the currently
     // running process is added back to the ready queue.
     Output ret("SRT");
-    ReadyQueue ();
+    ReadyQueue rq;
+    int cs_time=argv.getContextSwitchTime();
+
+
+
 
     return ret;
 };
@@ -551,20 +553,19 @@ int main(int argc, char *argv[]) {
     // processes = CreateProcesses(arguments);
     // Output srt = ShortestRemainingTime(processes, arguments);
 
-    //chen
-//    processes = CreateProcesses(arguments);
-//     for(int i=0;i<processes.size();++i){
-//        int num_burst=processes[i].getNumBurst();
-//        if(num_burst==1)
-//        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
-//        else
-//        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
-//    }
-//
-//    Output fcfs = FirstComeFirstServed(processes, arguments);
-//    out_text<<"Algorithm FCFS"<<endl;
-//    fcfs.print(out_text);
-//
+//    chen
+    processes = CreateProcesses(arguments);
+     for(int i=0;i<processes.size();++i){
+        int num_burst=processes[i].getNumBurst();
+        if(num_burst==1)
+        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
+        else
+        cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
+    }
+
+    Output fcfs = FirstComeFirstServed(processes, arguments);
+
+
 
     //huang
     processes = CreateProcesses(arguments);
@@ -573,7 +574,7 @@ int main(int argc, char *argv[]) {
 
     //result
     //li
-//    CreateOutputs(sjf, srt, fcfs, rr);
+    CreateOutputs(sjf, srt, fcfs, rr,out_text);
     /* exp-random.c */
 
 

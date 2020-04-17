@@ -31,9 +31,9 @@ public:
     string getName();
     int getNextIOFinishTime()const{return next_io_finish_time;}
     int getNextCPUFinishTime()const{return next_cpu_finish_time;}
-    int getBurstTime()const{return burst_time;} //total burst time
-    int getWaitTime()const{return wait_time;}    //total wait time
-    int getTurnAroundTime()const{return turn_around_time;} //total turn around time
+    double getBurstTime()const{return burst_time;} //total burst time
+    double getWaitTime()const{return wait_time;}    //total wait time
+    double getTurnAroundTime()const{return turn_around_time;} //total turn around time
     
     //modifiers
     void addCPUTime(int i);
@@ -54,9 +54,9 @@ public:
     void increaseCurrentIOIndex();
     void setNextIOFinishTime(int time);
     void setNextCPUFinishTime(int time);
-    void addBurstTime(int time);
-    void addWaitTime(int time);
-    void addTurnAroundTime(int time);
+    void addBurstTime(double time);
+    void addWaitTime(double time);
+    void addTurnAroundTime(double time);
     
 
     //debugger
@@ -77,9 +77,9 @@ private:
     deque<int> IOTime;
     int next_io_finish_time;
     int next_cpu_finish_time;
-    int burst_time;
-    int wait_time;
-    int turn_around_time;
+    double burst_time;
+    double wait_time;
+    double turn_around_time;
 
 };
 

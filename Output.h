@@ -15,16 +15,17 @@ public:
     double getTurnaroundTime();
     int getContextSwitch();
     int getPreemption();
+
     //modifier
-    void addCPUBurstTime(int time);
-    void addWaitTime(int time);
-    void addTurnaroundTime(int time);
+    void addCPUBurstTime(double time);
+    void addWaitTime(double time);
+    void addTurnaroundTime(double time);
     void addContextSwitch();
     void addPreemption();
     void changeName(string new_name) { name = new_name; }
 
     //debugger
-    //void print();
+    void print();
     
     //output the summaries
     ostream& print(ostream& out_str);
