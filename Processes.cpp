@@ -3,6 +3,7 @@
 //
 
 #include "Processes.h"
+#include <algorithm>
 
 Processes::Processes() {
 
@@ -48,4 +49,25 @@ void Processes::replace(Process process) {
             this->processes[i]=process;
         }
     }
+}
+
+int Processes::get_total_burst_time() {
+    int count = 0;
+
+    deque<Process>::iterator itr=this->processes.begin();
+    for (; itr !=this->processes.end() ; ++itr) {
+        count += itr->getBurstTime();
+    }
+
+    return count;
+}
+
+void Processes::queue_sort_by_arrival_time() {
+    std::sort(processes.begin(), processes.end(), sort_by_arrival);
+}
+
+
+
+bool sort_by_arrival(Process p1, Process p2) {
+    return p1.getArrivalTime() < p2.getArrivalTime();
 }

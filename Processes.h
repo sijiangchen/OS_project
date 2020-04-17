@@ -14,10 +14,12 @@ public:
     void add(Process process);
     void remove(Process process);
     void replace(Process process);
+    void queue_sort_by_arrival_time();
 
     //accessors
     Process& operator[](int i);
     int size();
+    int get_total_burst_time();
 
     //FOR DEBUG USE
     void print();
@@ -25,3 +27,6 @@ public:
 private:
     deque<Process> processes;
 };
+
+
+bool sort_by_arrival(Process p1, Process p2);

@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <algorithm>
+#include <vector>
 #include "Process.h"
 #include "Argument.h"
 #include "Processes.h"
@@ -350,7 +351,7 @@ void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
 
         //finish i/o burst and enter the ready queue
 
-        if(p.isBlocked()&&p.getNextIOFinishTime()==timeline){
+        if(p.isBlocked() && p.getNextIOFinishTime()==timeline){
             p.setWaiting();
             p.unBlocked();
             rq.push_back(p);
@@ -395,6 +396,7 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
                     if(processes[i].getName()==rq[0].getName())
                         current_process=&processes[i];
                 }
+
                 rq.pop_front();//remove the current process from the ready queue
                 bursttime=current_process->getCPUTime(current_process->getCurrentBurstIndex());
                 current_process->addBurstTime(bursttime);
@@ -492,8 +494,46 @@ Output RoundRobin(Processes processes, Argument argv) {
     //
     //For your simulation, if a preemption occurs but there are no other processes on the ready queue,
     // do not perform a context switch.
+
+    int num_process = processes.size();
+    processes.queue_sort_by_arrival_time();
+    // processes.print();
+
+    string RR_option = argv.getRROption();
+    int time_slice = argv.getTimeSlice();
+
+    if (processes.get_total_burst_time() < time_slice) {
+        Output ret = FirstComeFirstServed(processes, argv);
+        ret.changeName("RR");
+        return ret;
+    }
+
     Output ret("RR");
-    ReadyQueue ();
+    ReadyQueue rq;
+
+
+    int timeline = processes[0].getArrivalTime();
+
+
+    for (int i = 0; i < num_process; ++i) {
+
+        if (processes[i].getCPUTime(processes[i].getCurrentBurstIndex()) < time_slice) {
+
+        }
+        else if (processes[i].getCPUTime(processes[i].getCurrentBurstIndex()) < time_slice) {
+
+        }
+        else {
+
+        }
+
+    }
+
+
+
+
+
+
 
     return ret;
 };
@@ -507,9 +547,9 @@ int main(int argc, char *argv[]) {
     Argument arguments = ValidateInput(argc,argv);
     Processes processes = CreateProcesses(arguments);
 
-    Output sjf = ShortestJobFirst(processes, arguments);
-    processes = CreateProcesses(arguments);
-    Output srt = ShortestRemainingTime(processes, arguments);
+    // Output sjf = ShortestJobFirst(processes, arguments);
+    // processes = CreateProcesses(arguments);
+    // Output srt = ShortestRemainingTime(processes, arguments);
 
     //chen
 //    processes = CreateProcesses(arguments);
@@ -529,6 +569,8 @@ int main(int argc, char *argv[]) {
     //huang
     processes = CreateProcesses(arguments);
     Output rr = RoundRobin(processes, arguments);
+
+
     //result
     //li
 //    CreateOutputs(sjf, srt, fcfs, rr);

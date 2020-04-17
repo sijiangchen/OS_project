@@ -22,14 +22,16 @@ Process::Process() {
     turn_around_time=0;
 }
 
-Process::Process(char n,int time,int number,double lambda,double alpha) {
+Process::Process(char n,int time,int number,double lambda, double alpha) {
     this->name[0]=n;
     this->name[1]='\0';
     this->numBurst=number;
+
     this->is_finished=false;
     this->is_blocked=false;
     this->is_waiting=false;
     this->is_running=false;
+
     this->arrivalTime=time;
     this->currentBurstIndex=0;
     this->currentIOIndex=0;
@@ -54,21 +56,31 @@ void Process::addIOTime(int i) {
 }
 
 void Process::print() {
-    cout<<"my name is : "<<this->name<<endl;
-    cout<<"CPu burst time : "<<this->numBurst<<endl;
-    cout<<"Arrival time : "<<this->arrivalTime<<endl;
+    cout << "----------------------------------------------------" <<  endl;
+    cout<<   "    my name is : "    <<         this->name          <<  endl;
+    cout<<   "CPU burst time : "    <<         this->numBurst      <<  endl;
+    cout<<   "  Arrival time : "    <<         this->arrivalTime   <<  endl;
+
+
+
     deque<int >::iterator itr1=this->CPUTime.begin();
     deque<int >::iterator itr2=this->IOTime.begin();
+
+
     for (int i = 0; i < this->numBurst; ++i) {
-        if(i+1==this->numBurst){
-            cout<<"cpu time : "<<*itr1<<endl;
-        }else{
-            cout<<"cpu time : "<<*itr1++<<endl;
-            cout<<"io  time : "<<*itr2++<<endl;
+        if(i+1 == this->numBurst) {
+            cout<<      "cpu time : "       <<*itr1<<endl;
         }
+        else{
+            cout<<      "cpu time : "       <<*itr1++<<endl;
+            cout<<      "io  time : "       <<*itr2++<<endl;
+        }
+
         cout<<"tau : "<<this->getTau()<<endl;
         this->updateTau();
     }
+
+    cout << "----------------------------------------------------" <<  endl;
 
 }
 

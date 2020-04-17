@@ -21,6 +21,7 @@ public:
     void addTurnaroundTime(int time);
     void addContextSwitch();
     void addPreemption();
+    void changeName(string new_name) { name = new_name; }
 
     //debugger
     //void print();
