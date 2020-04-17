@@ -189,15 +189,15 @@ void Process::setNextIOFinishTime(int time){
     this->next_io_finish_time=time;
 }
 
-void Process::addBurstTime(int time){
+void Process::addBurstTime(double time){
     this->burst_time+=time;
 }
 
-void Process::addWaitTime(int time){
+void Process::addWaitTime(double time){
     this->wait_time+=time;
 }
 
-void Process::addTurnAroundTime(int time){
+void Process::addTurnAroundTime(double time){
     this->turn_around_time+=time;
 }
 
