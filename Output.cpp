@@ -11,7 +11,7 @@ Output::Output(string name) {
       TurnaroundTime=0;
       contextSwitch=0;
       preemption=0;
-
+      num_of_burst=0;
 }
 
 double Output::getCPUBurstTime() {
@@ -63,15 +63,20 @@ void Output::print() {
 }
 */
 
+void Output::setNumOfBurst(int num){
+    this->num_of_burst=num;
+}
+
 ostream& Output::print(ostream& out_str) {
     out_str<<setiosflags(ios::fixed)<<setprecision(3);
-    out_str<<"-- average CPU burst time: "<<this->CPUBurstTime/this->contextSwitch<<" ms"<<endl;
-    out_str<<"-- average wait time: "<<this->WaitTime/this->contextSwitch<<" ms"<<endl;
-    out_str<<"-- average turnaround time: "<<this->TurnaroundTime/this->contextSwitch<<" ms"<<endl;
+    out_str<<"-- average CPU burst time: "<<this->CPUBurstTime/this->num_of_burst<<" ms"<<endl;
+    out_str<<"-- average wait time: "<<this->WaitTime/this->num_of_burst<<" ms"<<endl;
+    out_str<<"-- average turnaround time: "<<this->TurnaroundTime/this->num_of_burst<<" ms"<<endl;
     out_str<<"-- total number of context switches: "<<this->contextSwitch<<endl;
     out_str<<"-- total number of preemptions: "<<this->preemption<<endl;
     return out_str;
 }
+
 
 void Output::print() {
     cout<<"total cpu burst time: "<<this->CPUBurstTime<<endl;
