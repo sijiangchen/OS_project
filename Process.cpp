@@ -235,3 +235,17 @@ void Process::create_copy_cpu() {
     this->CPUTimecopy= this->CPUTime;
 }
 
+void Process::clear() {
+    this->numBurst=0;
+}
+
+void Process::setRealTau(int t) {
+    real_tau=t;
+}
+
+void Process::updateRealTau(int t) {
+    real_tau-=t;
+}
+
+
+

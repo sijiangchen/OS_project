@@ -13,6 +13,7 @@ public:
     Process();
     Process(char n,int time,int number,double lambda,double alpha);
 
+    void clear();
     //accessors
     bool isFinished();
     bool isBlocked();
@@ -35,8 +36,10 @@ public:
     double getBurstTime()const{return burst_time;} //total burst time
     double getWaitTime()const{return wait_time;}    //total wait time
     double getTurnAroundTime()const{return turn_around_time;} //total turn around time
-    
+    int get_realTau(){return real_tau;}
     //modifiers
+    void setRealTau(int t);
+    void updateRealTau(int t);
     void create_copy_cpu();
     void addCPUTime(int i);
     void addIOTime(int i);
@@ -79,6 +82,7 @@ private:
     int currentIOIndex;
     double alpha;
     int tau;
+    int real_tau;
     deque<int> CPUTime;
     deque<int> CPUTimecopy;
     deque<int> IOTime;
