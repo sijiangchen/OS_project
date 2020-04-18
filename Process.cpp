@@ -231,3 +231,7 @@ void Process::setNextCPUFinishTime(int time) {
     this->next_cpu_finish_time=time;
 }
 
+void Process::create_copy_cpu() {
+    this->CPUTimecopy= this->CPUTime;
+}
+

@@ -18,8 +18,10 @@ public:
 
     //accessors
     Process& operator[](int i);
+    Process& findRunning();
     int size();
     int get_max_burst_time();
+
 
     //FOR DEBUG USE
     void print();

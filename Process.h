@@ -37,6 +37,7 @@ public:
     double getTurnAroundTime()const{return turn_around_time;} //total turn around time
     
     //modifiers
+    void create_copy_cpu();
     void addCPUTime(int i);
     void addIOTime(int i);
     void setFinished();
@@ -79,6 +80,7 @@ private:
     double alpha;
     int tau;
     deque<int> CPUTime;
+    deque<int> CPUTimecopy;
     deque<int> IOTime;
     int next_io_finish_time;
     int next_cpu_finish_time;

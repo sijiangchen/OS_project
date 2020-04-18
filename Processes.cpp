@@ -68,6 +68,13 @@ void Processes::queue_sort_by_arrival_time() {
     std::sort(processes.begin(), processes.end(), sort_by_arrival);
 }
 
+Process &Processes::findRunning() {
+    for (int i = 0; i < processes.size(); ++i) {
+        if(processes[i].isRunning()){
+            return processes[i];
+        }
+    }
+}
 
 
 bool sort_by_arrival(Process p1, Process p2) {
