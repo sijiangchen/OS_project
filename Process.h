@@ -18,6 +18,7 @@ public:
     bool isBlocked();
     bool isRunning(){return is_running;}
     bool isWaiting(){return is_waiting;}
+    bool ispreempted(){return preempted;}
     int getCurrentBurstIndex();
     int getCurrentIOIndex();
     int getCPUTime(int index);
@@ -42,10 +43,13 @@ public:
     void setBlocked();
     void setRunning();
     void setWaiting();
+    void setPreempted();
     void unBlocked();
     void unWaiting();
     void unRunning();
+    void unPreempted();
     void setAlpha(double a);
+    void setCPUTime(int index,int time);
     //use negative number for - operation
     void updateCPUTime(int index, int time);
     void updateIOTime(int index, int time);
@@ -67,6 +71,7 @@ private:
     bool is_blocked;
     bool is_running;
     bool is_waiting;
+    bool preempted;
     int arrivalTime;
     int numBurst;
     int currentBurstIndex;
