@@ -13,6 +13,7 @@ Process::Process() {
     is_blocked=false;
     is_waiting=false;
     is_running=false;
+    preempted=false;
     numBurst=0;
     currentBurstIndex=0;
     currentIOIndex=0;
