@@ -488,23 +488,21 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
 
 void EverySecond_RR(Processes& processes, ReadyQueue& rq, int timeline，int time_slice, int i_in_time_slice, bool isEND){
 
-    int num_process=processes.size();
-    for(int i=0;i<num_process;++i){
-        Process p=processes[i];
-        if(p.isFinished()) continue;
+    int num_process = processes.size();
+    for (int i = 0; i < num_process; ++i) {
+        Process p = processes[i];
+
+        if (p.isFinished()) continue;
+
         //the first time it arrives
-        if(p.isWaiting()){
+        if (p.isWaiting()){
             p.addWaitTime(1);
         }
 
-        if(p.getCurrentBurstIndex()==0){
-            if(p.getArrivalTime()==timeline) {
-                if (isEND) {
-                    rq.push_back(p);
-                }
-                else {
-                    rq.push_front(p);
-                }
+        if (p.getCurrentBurstIndex() == 0){
+            if(p.getArrivalTime() == timeline) {
+                if (isEND) {  rq.push_back(p); }
+                else { rq.push_front(p); }
                 p.setWaiting();
                 cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" arrived; added to ready queue ";
                 rq.print();
@@ -512,16 +510,13 @@ void EverySecond_RR(Processes& processes, ReadyQueue& rq, int timeline，int tim
         }
 
         //finish i/o burst and enter the ready queue
-
-        if(p.isBlocked() && p.getNextIOFinishTime()==timeline) {
+        if (p.isBlocked() && p.getNextIOFinishTime() == timeline) {
             p.setWaiting();
             p.unBlocked();
-            if (isEND) {
-                    rq.push_back(p);
-                }
-                else {
-                    rq.push_front(p);
-                }
+
+            if (isEND) {  rq.push_back(p); }
+            else { rq.push_front(p); }
+
             cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
             rq.print();
         }
@@ -555,29 +550,43 @@ Output RoundRobin(Processes processes, Argument argv) {
 
     int time_slice = argv.getTimeSlice();
 
+    // if time slice is larger than the max burst time. use FCFS instead
     if (processes.get_max_burst_time() < time_slice) {
         Output ret = FirstComeFirstServed(processes, argv);
         ret.changeName("RR");
         return ret;
     }
 
+
     Output ret("RR");
     ReadyQueue rq;
-
+    Process* p;
 
     int timeline = processes[0].getArrivalTime();
+    int finished = 0;
+    int i_time_slice = 0;
+    EverySecond_RR(processes, rq, timeline, time_slice, i_time_slice, isEND);
+
+    while (finished != num_process) {
+        if (rq.size() != 0){
+            // ready queue not empty
+
+            // find the process at the front
+            for(int i=0;i<num_process;++i){
+                if(processes[i].getName() == rq[0].getName())
+                    p = &processes[i];
+            }
+
+            rq.pop_front();
 
 
-    for (int i = 0; i < num_process; ++i) {
-
-        
-
+        }
+        else {
+            // ready queue is empty
+            timeline++;
+            EverySecond_RR(processes, rq, timeline, time_slice, i_time_slice, isEND);
+        }
     }
-
-
-
-
-
 
 
     return ret;

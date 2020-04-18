@@ -81,6 +81,11 @@ private:
     double wait_time;
     double turn_around_time;
 
+    // for RR only
+    int amount_finished_in_current_burst;
+    int amount_finished_in_current_io;
+
+
 };
 
 #endif

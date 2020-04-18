@@ -20,6 +20,9 @@ Process::Process() {
     burst_time=0;
     wait_time=0;
     turn_around_time=0;
+    amount_finished_in_current_burst=0;
+    amount_finished_in_current_io=0;
+
 }
 
 Process::Process(char n,int time,int number,double lambda, double alpha) {
