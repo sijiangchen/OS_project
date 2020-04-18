@@ -108,6 +108,9 @@ void Process::setWaiting(){
     this->is_waiting=true;
 }
 
+void Process::setPreempted(){
+    this->preempted=true;
+}
 
 void Process::unBlocked() {
     this->is_blocked=false;
@@ -122,6 +125,9 @@ void Process::unRunning(){
     this->is_running=false;
 }
 
+void Process::unPreempted(){
+    this->preempted=false;
+}
 
 int Process::getCurrentBurstIndex() {
     return this->currentBurstIndex;
@@ -133,6 +139,10 @@ int Process::getCurrentIOIndex() {
 
 bool Process::isBlocked() {
     return this->is_blocked;
+}
+
+void Process::setCPUTime(int index,int time){
+    this->CPUTime[index]=time;
 }
 
 int Process::getCPUTime(int index) {
