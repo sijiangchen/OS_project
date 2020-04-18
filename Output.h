@@ -15,7 +15,8 @@ public:
     double getTurnaroundTime();
     int getContextSwitch();
     int getPreemption();
-
+    int getNumOfBurst(){return num_of_burst;}
+    
     //modifier
     void addCPUBurstTime(double time);
     void addWaitTime(double time);
@@ -23,7 +24,8 @@ public:
     void addContextSwitch();
     void addPreemption();
     void changeName(string new_name) { name = new_name; }
-
+    void setNumOfBurst(int num);
+    
     //debugger
     void print();
     
@@ -37,5 +39,5 @@ private:
     double TurnaroundTime;
     int contextSwitch;
     int preemption;
-
+    int num_of_burst;
 };
