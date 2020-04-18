@@ -329,41 +329,47 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
     return ret;
 };
 
-
 //this function is used to simulate every millisecond of each process
-void EverySecond(Processes& processes, ReadyQueue& rq,int timeline){
-
+void EverySecond(Processes& processes, ReadyQueue& rq,int timeline,bool begin){
     int num_process=processes.size();
     for(int i=0;i<num_process;++i){
         Process p=processes[i];
+        if(begin){ p=processes[num_process-1-i];}
         if(p.isFinished()) continue;
-        //the first time it arrives
-        if(p.isWaiting()){
+       
+        if(p.isWaiting()){      //when waiting in the ready queue
             p.addWaitTime(1);
         }
-
+        
+        
+        //finish i/o burst and enter the ready queue
+        if(p.isBlocked()&&p.getNextIOFinishTime()==timeline){
+            p.setWaiting();
+            p.unBlocked();
+            if(begin) rq.push_front(p);
+            else rq.push_back(p);
+            cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
+            rq.print();
+                     }
+        
+         //the first time it arrives
         if(p.getCurrentBurstIndex()==0){
             if(p.getArrivalTime()==timeline){
-                rq.push_back(p);
+                if(begin) rq.push_front(p);
+                else rq.push_back(p);
                 p.setWaiting();
                 cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" arrived; added to ready queue ";
                 rq.print();
             }
-        }
-
-        //finish i/o burst and enter the ready queue
-
-        if(p.isBlocked() && p.getNextIOFinishTime()==timeline){
-            p.setWaiting();
-            p.unBlocked();
-            rq.push_back(p);
-            cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
-            rq.print();
-        }
-
-        processes[i]=p;
-    }
+                  }
+        
+        
+        if(begin) processes[num_process-1-i]=p;
+        else processes[i]=p;
 }
+}
+
+
 
 Output FirstComeFirstServed(Processes processes, Argument argv) {
     //The FCFS algorithm is a non-preemptive algorithm in which processes line up in the ready queue,
@@ -371,6 +377,7 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
     // infinite time slice).
     Output ret("FCFS");
     int cs_time=argv.getContextSwitchTime();
+    bool begin=false;
     ReadyQueue rq;
     int timeline=0;
     cout<<"time "<<timeline<<"ms: Simulator started for FCFS ";
@@ -486,6 +493,192 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
     return ret;
 };
 
+
+
+Output RoundRobin(Processes processes, Argument argv) {
+    //The RR algorithm is essentially the FCFS algorithm with predefined time slice tslice. Each process
+    // is given tslice amount of time to complete its CPU burst. If this time slice expires, the process is
+    // preempted and added to the end of the ready queue (though see the rradd parameter described below).
+    //
+    //If a process completes its CPU burst before a time slice expiration, the next process on the ready queue is
+    // immediately context-switched into the CPU.
+    //
+    //For your simulation, if a preemption occurs but there are no other processes on the ready queue,
+    // do not perform a context switch.
+    Output ret("RR");
+    int cs_time=argv.getContextSwitchTime();
+    int tslice=argv.getTimeSlice();
+    bool begin=false;
+    if(argv.getRROption()=="BEGIN") begin=true;
+    ReadyQueue rq;
+    int timeline=0;
+    cout<<"time "<<timeline<<"ms: Simulator started for RR ";
+    rq.print();
+       
+    int num_process=processes.size();
+        
+    //set CPU state variables
+    bool isrunning=false;
+    //bool iscontextswitching=false;
+    bool isidle=true;
+    int bursttime=0;
+    int num_process_finished=0;
+    //bool preempted=false;
+    //int num_cs=0;  //number of context switches
+    Process* current_process;
+    //initialize the ready queue
+    EverySecond(processes, rq, timeline,begin);
+        
+    //while there are unfinished processes
+    while(num_process_finished<num_process){
+    if(isidle){
+        //if there is a process in the ready queue
+            if(rq.size()!=0){
+                for(int i=0;i<num_process;++i){
+                    if(processes[i].getName()==rq[0].getName())
+                       current_process=&processes[i];
+                    }
+                rq.pop_front();//remove the current process from the ready queue
+                bursttime=current_process->getCPUTime(current_process->getCurrentBurstIndex());
+                current_process->addBurstTime(bursttime);
+                isidle=false;
+                current_process->unWaiting();
+                
+                //cpu context switch in
+                for(int t=1;t<=cs_time/2-1;++t){
+                    timeline++;
+                    EverySecond(processes,rq, timeline,begin);
+                         
+                    }
+                timeline++;
+                if(!current_process->ispreempted())
+                   cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" started using the CPU for "<<bursttime<<"ms burst ";
+                else
+                    cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" started using the CPU with "<<bursttime<<"ms burst remaining ";
+                rq.print();
+                EverySecond(processes,rq, timeline,begin);
+                   
+                  //cpu burst
+                   
+                isrunning=true;
+                current_process->setRunning();
+                ret.addContextSwitch();
+                
+                bool tag=false;
+                
+                //if current burst is not expired
+                do{
+                if(tag)  EverySecond(processes, rq, timeline,begin);
+                if(bursttime<=tslice){
+                ret.addCPUBurstTime(bursttime);
+                for(int t=1;t<=bursttime-1;++t){
+                    timeline++;
+                    EverySecond(processes, rq, timeline,begin);
+                    }
+                    bursttime=0;
+                    timeline++;
+                }
+                else{       //if current burst is expired
+                    ret.addCPUBurstTime(tslice);
+                    for(int t=1;t<=tslice-1;++t){
+                        timeline++;
+                        EverySecond(processes, rq, timeline,begin);
+                    }
+                  bursttime=bursttime-tslice;
+                  timeline++;
+                    if(rq.isEmpty()&&bursttime) {
+                        tag=true;
+                        cout<<"time "<<timeline<<"ms: Time slice expired; no preemption because ready queue is empty ";
+                        rq.print();
+                    }
+                }
+                }while(rq.isEmpty()&&bursttime);
+                
+                if(bursttime==0){
+                   current_process->unPreempted();
+                }
+                //if current process is expired and the ready queue is not empty
+                else{
+                    current_process->setPreempted();
+                    current_process->setCPUTime(current_process->getCurrentBurstIndex(), bursttime);
+                    ret.addPreemption();
+                }
+            
+                    //timeline++;
+                    //finish cpu burst
+                    isrunning=false;
+                    current_process->unRunning();
+                    
+                //when it finish a complete cpu burst
+                if(!current_process->ispreempted()){
+                    //calculate the finished processes
+                    if(current_process->getCurrentBurstIndex()==current_process->getNumBurst()-1){
+                        ret.addWaitTime(current_process->getWaitTime());
+                        cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" terminated ";
+                        rq.print();
+                        current_process->setFinished();
+                        num_process_finished++;
+                    }
+                    else{
+                      //enter the i/o subsystem
+                        int num_burst_to_go=current_process->getNumBurst()-1-current_process->getCurrentBurstIndex();
+                        if(num_burst_to_go==1)
+                            cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" completed a CPU burst; "<<num_burst_to_go<<" burst to go ";
+                        else
+                            cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" completed a CPU burst; "<<num_burst_to_go<<" bursts to go ";
+                        rq.print();
+                        current_process->increaseCurrentCPUBurstIndex();
+                        int next_IO_time=current_process->getIOTime(current_process->getCurrentIOIndex());
+                        current_process->setNextIOFinishTime(timeline+next_IO_time+cs_time/2);
+                        cout<<"time "<<timeline<<"ms: Process "<<current_process->getName()<<" switching out of CPU; will block on I/O until time "<<current_process->getNextIOFinishTime()<<"ms ";
+                        rq.print();
+                        current_process->setBlocked();
+                        current_process->increaseCurrentIOIndex();
+                    }
+                }
+                else{  //if it is preempted
+                    cout<<"time "<<timeline<<"ms: Time slice expired; process "<<current_process->getName()<<" preempted with "<<current_process->getCPUTime(current_process->getCurrentBurstIndex())<<"ms to go ";
+                    rq.print();
+                }
+                    //cpu context switch out
+                       
+                       EverySecond(processes, rq, timeline,begin);
+                        for(int t=1;t<=cs_time/2-1;++t){
+                           timeline++;
+                           EverySecond(processes, rq, timeline,begin);
+                             }
+                        timeline++;
+                       //which one first??
+                      if(current_process->ispreempted()){
+                          rq.push_back(*current_process);
+                          //current_process->unPreempted();
+                      }
+                        EverySecond(processes, rq, timeline,begin);
+                      if(current_process->ispreempted())
+                        current_process->setWaiting();
+                        isidle=true;
+                    
+            }
+                //if the ready queue is empty
+                else{
+                    ++timeline;
+                    EverySecond(processes, rq, timeline,begin);
+                     
+                }
+                        
+    }
+        }
+        
+        int total_turnaround=ret.getCPUBurstTime()+ret.getWaitTime()+ret.getContextSwitch()*cs_time;
+        ret.addTurnaroundTime(total_turnaround);
+        cout<<"time "<<timeline<<"ms: Simulator ended for RR ";
+        rq.print();
+        
+        return ret;
+};
+
+
+/*huang
 void EverySecond_RR(Processes& processes, ReadyQueue& rq, int timeline，int time_slice, int i_in_time_slice, bool isEND){
 
     int num_process = processes.size();
@@ -591,6 +784,8 @@ Output RoundRobin(Processes processes, Argument argv) {
 
     return ret;
 };
+*/
+
 
 int main(int argc, char *argv[]) {
     setvbuf( stdout, NULL, _IONBF, 0 );
@@ -607,22 +802,36 @@ int main(int argc, char *argv[]) {
 
 //    chen
     processes = CreateProcesses(arguments);
-     for(int i=0;i<processes.size();++i){
+    int total_burst=0;
+    for(int i=0;i<processes.size();++i){
         int num_burst=processes[i].getNumBurst();
+         total_burst+=num_burst;
         if(num_burst==1)
         cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
         else
         cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
     }
-
+    
     Output fcfs = FirstComeFirstServed(processes, arguments);
+    fcfs.setNumOfBurst(total_burst);
+    out_text<<"Algorithm FCFS"<<endl;
+    fcfs.print(out_text);
+    cout<<endl;
 
-
-
-    //huang
-    processes = CreateProcesses(arguments);
+    
+   processes = CreateProcesses(arguments);
+    for(int i=0;i<processes.size();++i){
+           int num_burst=processes[i].getNumBurst();
+          
+           if(num_burst==1)
+           cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU burst"<<endl;
+           else
+           cout<<"Process "<<processes[i].getName()<<" [NEW] (arrival time "<<processes[i].getArrivalTime()<<" ms) "<<num_burst<<" CPU bursts"<<endl;
+       }
     Output rr = RoundRobin(processes, arguments);
-
+    rr.setNumOfBurst(total_burst);
+    out_text<<"Algorithm RR"<<endl;
+    rr.print(out_text);
 
     //result
     //li
