@@ -486,6 +486,50 @@ Output FirstComeFirstServed(Processes processes, Argument argv) {
     return ret;
 };
 
+void EverySecond_RR(Processes& processes, ReadyQueue& rq, int timeline，int time_slice, int i_in_time_slice, bool isEND){
+
+    int num_process=processes.size();
+    for(int i=0;i<num_process;++i){
+        Process p=processes[i];
+        if(p.isFinished()) continue;
+        //the first time it arrives
+        if(p.isWaiting()){
+            p.addWaitTime(1);
+        }
+
+        if(p.getCurrentBurstIndex()==0){
+            if(p.getArrivalTime()==timeline) {
+                if (isEND) {
+                    rq.push_back(p);
+                }
+                else {
+                    rq.push_front(p);
+                }
+                p.setWaiting();
+                cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" arrived; added to ready queue ";
+                rq.print();
+            }
+        }
+
+        //finish i/o burst and enter the ready queue
+
+        if(p.isBlocked() && p.getNextIOFinishTime()==timeline) {
+            p.setWaiting();
+            p.unBlocked();
+            if (isEND) {
+                    rq.push_back(p);
+                }
+                else {
+                    rq.push_front(p);
+                }
+            cout<<"time "<<timeline<<"ms: Process "<<p.getName()<<" completed I/O; added to ready queue ";
+            rq.print();
+        }
+
+        processes[i]=p;
+    }
+}
+
 Output RoundRobin(Processes processes, Argument argv) {
     //The RR algorithm is essentially the FCFS algorithm with predefined time slice tslice. Each process
     // is given tslice amount of time to complete its CPU burst. If this time slice expires, the process is
@@ -501,10 +545,17 @@ Output RoundRobin(Processes processes, Argument argv) {
     processes.queue_sort_by_arrival_time();
     // processes.print();
 
-    string RR_option = argv.getRROption();
+    bool isEND;
+    if (argv.getRROption() == "END") {
+        isEND = true;
+    }
+    else {
+        isEND = false;
+    }
+
     int time_slice = argv.getTimeSlice();
 
-    if (processes.get_total_burst_time() < time_slice) {
+    if (processes.get_max_burst_time() < time_slice) {
         Output ret = FirstComeFirstServed(processes, argv);
         ret.changeName("RR");
         return ret;
@@ -519,15 +570,7 @@ Output RoundRobin(Processes processes, Argument argv) {
 
     for (int i = 0; i < num_process; ++i) {
 
-        if (processes[i].getCPUTime(processes[i].getCurrentBurstIndex()) < time_slice) {
-
-        }
-        else if (processes[i].getCPUTime(processes[i].getCurrentBurstIndex()) < time_slice) {
-
-        }
-        else {
-
-        }
+        
 
     }
 

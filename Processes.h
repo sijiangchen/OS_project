@@ -19,7 +19,7 @@ public:
     //accessors
     Process& operator[](int i);
     int size();
-    int get_total_burst_time();
+    int get_max_burst_time();
 
     //FOR DEBUG USE
     void print();

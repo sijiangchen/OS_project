@@ -51,15 +51,17 @@ void Processes::replace(Process process) {
     }
 }
 
-int Processes::get_total_burst_time() {
-    int count = 0;
+int Processes::get_max_burst_time() {
+    int max = 0;
 
     deque<Process>::iterator itr=this->processes.begin();
     for (; itr !=this->processes.end() ; ++itr) {
-        count += itr->getBurstTime();
+        if (itr->getBurstTime() > max) {
+            max = itr->getBurstTime();
+        }
     }
 
-    return count;
+    return max;
 }
 
 void Processes::queue_sort_by_arrival_time() {
