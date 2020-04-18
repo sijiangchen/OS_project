@@ -184,7 +184,7 @@ double Process::getAlpha() {
 
 void Process::updateTau() {
 
-    double a=alpha*CPUTime[currentBurstIndex];
+    double a=alpha*CPUTimecopy[currentBurstIndex];
     double b=(1-alpha)*tau;
 
     double res=a+b;

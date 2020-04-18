@@ -62,7 +62,7 @@ public:
     void addBurstTime(double time);
     void addWaitTime(double time);
     void addTurnAroundTime(double time);
-    
+    bool prerun=false;
 
     //debugger
     void print();

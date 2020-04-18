@@ -318,11 +318,13 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
 void srt_second(Processes& processes,ReadyQueue& rq,
                 int timeline,int cs_time,vector<Line>& lines,
                 bool& cpu_free,int &cpu_in,int &cpu_out,int & has_run,
-                vector<Process> &temp,vector<Process> &temp2){
+                vector<Process> &temp,vector<Process> &temp2,Process& now){
+    
     //cpu finish
 
     if(!cpu_free){
         has_run++;
+
         for (int i = 0; i < processes.size(); ++i) {
             if(processes[i].isRunning()){
                 if(processes[i].getNextCPUFinishTime()==timeline){
@@ -359,28 +361,56 @@ void srt_second(Processes& processes,ReadyQueue& rq,
         if(processes[i].isBlocked()){
             if(processes[i].getNextIOFinishTime()==timeline){
                 //need preem or not
-                Process running=processes.findRunning();
-                if(processes[i].getTau()<running.getTau()){
-                    //preemt
-                    running.unRunning();
-                    running.updateCPUTime(running.getCurrentBurstIndex(),-1*(has_run));
-                    cpu_out=2;
-                    temp.push_back(running);
-                    cpu_free=true;
-                    processes[i].increaseCurrentIOIndex();
-                    rq.sjf_insert(processes[i]);
-                    string t="Process "+processes[i].getName()+
-                            " (tau "+to_string(processes[i].getTau())+
-                            "ms) completed I/O; preempting "+running.getName()
-                            +" "+rq.print_string();
-                    lines.push_back(Line(t,timeline,"pree"));
-                    cpu_in=2;
+                int index=processes.findRunning();
+                if(index!=-1){
+                    Process running=processes[index];
+                    if(processes[i].getTau()<running.getTau()){
+                        //preemt
+                        running.unRunning();
+                        running.updateCPUTime(running.getCurrentBurstIndex(),-1*(has_run));
+                        cpu_out=2;
+                        temp.push_back(running);
+                        cpu_free=true;
+                        processes[i].increaseCurrentIOIndex();
+                        rq.sjf_insert(processes[i]);
+                        string t="Process "+processes[i].getName()+
+                                 " (tau "+to_string(processes[i].getTau())+
+                                 "ms) completed I/O; preempting "+running.getName()
+                                 +" "+rq.print_string();
+                        lines.push_back(Line(t,timeline,"pree"));
+                        cpu_in=2;
+                        
+                    }else{
+                        //add back to queue
+                        processes[i].unBlocked();
+                        processes[i].increaseCurrentIOIndex();
+                        rq.sjf_insert(processes[i]);
+                        string t;
+                        t+="Process "+processes[i].getName()+
+                        " (tau "+to_string(processes[i].getTau())+"ms) completed I/O; added to ready queue "+
+                        rq.print_string();
+                        lines.push_back(Line(t,timeline,"iofinish"));
+                        cpu_in=2;
+                        cpu_out=0;
+                        if(cpu_free){
+                            now=processes[i];
+                        }
+                    }
                 }else{
                     //add back to queue
                     processes[i].unBlocked();
                     processes[i].increaseCurrentIOIndex();
                     rq.sjf_insert(processes[i]);
+                    string t;
+                    t+="Process "+processes[i].getName()+
+                       " (tau "+to_string(processes[i].getTau())+"ms) completed I/O; added to ready queue "+
+                       rq.print_string();
+                    lines.push_back(Line(t,timeline,"iofinish"));
+                    cpu_in=2;
+                    cpu_out=0;
+
                 }
+
             }
         }
     }
@@ -405,7 +435,6 @@ void srt_second(Processes& processes,ReadyQueue& rq,
     //run new cpu
     if(cpu_free){
         if(rq.size()!=0){
-
             if(cpu_out!=0){
                 cpu_out--;
             }else{
@@ -472,10 +501,13 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
     vector<Process>temp;
     vector<Process>temp2;
     int has_run=0;
+    Process now;
     while(processes.size()!=0){
-        if(timeline==310)break;
+        if(timeline>4003) {
+            break;
+        }
         srt_second(processes,rq,timeline,cstime,lines,cpu_free,cpu_in,cpu_out,
-                   has_run,temp,temp2);
+                   has_run,temp,temp2,now);
         timeline++;
 
     }
