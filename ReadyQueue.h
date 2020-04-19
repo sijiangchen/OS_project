@@ -20,6 +20,7 @@ public:
     void clear();
     void removeProcess(Process p);
     void sjf_insert(Process p);
+    void srt_insert(Process p);
     void swap(Process& p1,Process& p2);
 
     //accessors

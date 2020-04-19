@@ -105,6 +105,20 @@ bool mysort(Process p1, Process p2) {
         return false;
     }
 }
+bool mysort2(Process p1, Process p2) {
+    if(p1.real_tau < p2.real_tau){
+        return true;
+    }else if(p1.real_tau==p2.real_tau){
+        if(p1.getName()<p2.getName()){
+            return true;
+        }else{
+            return false;
+        }
+    }else{
+        return false;
+    }
+    return true;
+}
 
 void ReadyQueue::sjf_insert(Process p) {
     bool inserted=false;
@@ -160,5 +174,26 @@ string ReadyQueue::print_string() {
 
     }
     return ret;
+}
+
+void ReadyQueue::srt_insert(Process p) {
+    bool inserted=false;
+    int i;
+    if(readyQueue.size()==0){
+        readyQueue.push_back(p);
+        return;
+    }else{
+        std::vector<Process> temp;
+        for (int j = 0; j < readyQueue.size(); ++j) {
+            temp.push_back(readyQueue[j]);
+        }
+        temp.push_back(p);
+        sort(temp.begin(),temp.end(),mysort2);
+        readyQueue.clear();
+        for (int k = 0; k < temp.size(); ++k) {
+            readyQueue.push_back(temp[k]);
+        }
+
+    }
 }
 

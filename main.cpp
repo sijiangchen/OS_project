@@ -318,25 +318,41 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
 void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
         bool& cpu_free,int& switch_in, int& switch_out,Process& loading,Process& outting,int& has_run){
 
-if(timeline==1621){
-    cout<<""<<endl;
-}
 
+if(timeline==8959){
+    cout<<"";
+}
 
     bool started_this_second=false;
     //finish switch out
     if(switch_out==0){
         if(outting.getNumBurst()>0){
-            if(outting.ispreempted()){
-                outting.unPreempted();
-                rq.sjf_insert(outting);
+            if(outting.isFinished()){
+                rq.removeProcess(outting);
+                processes.remove(outting);
+                cpu_free=true;
+                has_run=0;
+                outting.clear();
+
             }else{
-                outting.setBlocked();
-                processes.replace(outting);
+                if(outting.ispreempted()){
+                    outting.unPreempted();
+                    if(timeline==8959){
+                        cout<<"====="<<rq.print_string()<<endl;
+                    }
+                    rq.srt_insert(outting);
+                    if(timeline==8959){
+                        cout<<"====="<<rq.print_string()<<endl;
+                    }
+                }else{
+                    outting.setBlocked();
+                    processes.replace(outting);
+                }
+                outting.clear();
+                cpu_free=true;
+                has_run=0;
             }
-            outting.clear();
-            cpu_free=true;
-            has_run=0;
+
 
         }
     }
@@ -354,22 +370,39 @@ if(timeline==1621){
     }
 
 
+
     //cpu burst
     if(!cpu_free){
         has_run++;
         for (int i = 0; i < processes.size(); ++i) {
+            if(processes[i].getNextCPUFinishTime()==timeline and processes[i].isRunning()){
+                if(processes[i].getCurrentBurstIndex()+1==processes[i].getNumBurst()){
+                    //terminated
+                    processes[i].unRunning();
+                    cout<<"time "<<timeline<<"ms: Process "<<processes[i].getName()<<" terminated "<<rq.print_string()<<endl;
+                    processes[i].setFinished();
+                    outting=processes[i];
+                    switch_out=2;
+                }else{
+                    processes[i].unRunning();
+                    switch_out=2;
+                    outting=processes[i];
+                    if(outting.getNumBurst()-outting.getCurrentBurstIndex()-1==1){
+                        cout<<"time "<<timeline<<"ms: Process "<<outting.getName()<<" (tau "<<outting.getTau()<<"ms) completed a CPU burst; "<<outting.getNumBurst()-outting.getCurrentBurstIndex()-1<<
+                            " burst to go "<<rq.print_string()<<endl;
+                    }else{
+                        cout<<"time "<<timeline<<"ms: Process "<<outting.getName()<<" (tau "<<outting.getTau()<<"ms) completed a CPU burst; "<<outting.getNumBurst()-outting.getCurrentBurstIndex()-1<<
+                            " bursts to go "<<rq.print_string()<<endl;
+                    }
 
-            if(processes[i].getNextCPUFinishTime()==timeline){
-                processes[i].unRunning();
-                switch_out=2;
-                outting=processes[i];
-                cout<<"time "<<timeline<<"ms: Process "<<outting.getName()<<" (tau "<<outting.getTau()<<"ms) completed a CPU burst; "<<outting.getNumBurst()-outting.getCurrentBurstIndex()-1<<" bursts to go "<<rq.print_string()<<endl;
-                outting.updateTau();
-                outting.increaseCurrentCPUBurstIndex();
-                cout<<"time "<<timeline<<"ms: Recalculated tau = "<<outting.getTau()<<"ms for process "<<outting.getName()<<" "<<rq.print_string()<<endl;
-                int nextio=timeline+outting.getIOTime()+2;
-                outting.setNextIOFinishTime(nextio);
-                cout<<"time "<<timeline<<"ms: Process "<<outting.getName()<<" switching out of CPU; will block on I/O until time "<<nextio<<"ms "<<rq.print_string()<<endl;
+                    outting.updateTau();
+                    outting.increaseCurrentCPUBurstIndex();
+                    cout<<"time "<<timeline<<"ms: Recalculated tau = "<<outting.getTau()<<"ms for process "<<outting.getName()<<" "<<rq.print_string()<<endl;
+                    int nextio=timeline+outting.getIOTime()+2;
+                    outting.setNextIOFinishTime(nextio);
+                    cout<<"time "<<timeline<<"ms: Process "<<outting.getName()<<" switching out of CPU; will block on I/O until time "<<nextio<<"ms "<<rq.print_string()<<endl;
+                }
+
             }
         }
     }
@@ -379,12 +412,13 @@ if(timeline==1621){
         if(timeline==0){
             break;
         }
+
         if(processes[i].getNextIOFinishTime()==timeline){
             //if there is not a running processing
             if(processes.findRunning()==-1){
                 processes[i].unBlocked();
                 processes[i].increaseCurrentIOIndex();
-                rq.sjf_insert(processes[i]);
+                rq.srt_insert(processes[i]);
                 string t;
                 t+="Process "+processes[i].getName()+
                    " (tau "+to_string(processes[i].getTau())+"ms) completed I/O; added to ready queue "+
@@ -394,28 +428,31 @@ if(timeline==1621){
                 //if preemt or not
                 processes[i].unBlocked();
                 processes[i].increaseCurrentIOIndex();
-                if(processes[i].getTau()<(processes[processes.findRunning()].real_tau)){
-                    //preemt here
-                    rq.sjf_insert(processes[i]);
-                    cout<<"time "<<timeline<<"ms: Process "<<processes[i].getName()<<" (tau "<<processes[i].getTau()<<"ms) completed I/O; preempting "<<processes[processes.findRunning()].getName()<<" "<<rq.print_string()<<endl;
-                    int run=processes.findRunning();
-                    processes[run].updateCPUTime(processes[run].getCurrentBurstIndex(),-1*(has_run-1));
-                    processes[run].unRunning();
-                    processes[run].setPreempted();
-                    outting=processes[run];
-                    switch_out=2;
-                    loading=processes[i];
-                    switch_in=2;
-                    rq.removeProcess(loading);
+                int run=processes.findRunning();
+                if(run!=-1){
+                    if(processes[i].getTau()<(processes[run].real_tau)){
+                        //preemt here
+                        rq.srt_insert(processes[i]);
+                        cout<<"time "<<timeline<<"ms: Process "<<processes[i].getName()<<" (tau "<<processes[i].getTau()<<"ms) completed I/O; preempting "<<processes[processes.findRunning()].getName()<<" "<<rq.print_string()<<endl;
+                        processes[run].updateCPUTime(processes[run].getCurrentBurstIndex(),-1*(has_run-1));
+                        processes[run].unRunning();
+                        processes[run].setPreempted();
+                        outting=processes[run];
+                        switch_out=2;
+                        loading=processes[i];
+                        switch_in=2;
+                        rq.removeProcess(loading);
 
-                }else{
-                    rq.sjf_insert(processes[i]);
-                    string t;
-                    t+="Process "+processes[i].getName()+
-                       " (tau "+to_string(processes[i].getTau())+"ms) completed I/O; added to ready queue "+
-                       rq.print_string();
-                    cout<<"time "<<timeline<<"ms: "<<t<<endl;
+                    }else{
+                        rq.srt_insert(processes[i]);
+                        string t;
+                        t+="Process "+processes[i].getName()+
+                           " (tau "+to_string(processes[i].getTau())+"ms) completed I/O; added to ready queue "+
+                           rq.print_string();
+                        cout<<"time "<<timeline<<"ms: "<<t<<endl;
+                    }
                 }
+
             }
 
         }
@@ -423,7 +460,7 @@ if(timeline==1621){
     //new arrival
     for (int i = 0; i < processes.size(); ++i) {
         if(processes[i].getArrivalTime()==timeline){
-            rq.sjf_insert(processes[i]);
+            rq.srt_insert(processes[i]);
             string temp="time "+to_string(timeline)+"ms: "+"Process "+
                         processes[i].getName()+" (tau "+to_string(processes[i].getTau())+
                         "ms) arrived; added to ready queue "+rq.print_string();
@@ -460,18 +497,23 @@ if(timeline==1621){
         if(started_this_second){
             if(rq.size()>0){
                 int run=processes.findRunning();
-                if(rq[0].getTau()<(processes[run].real_tau)){
-                    //preempt here
-                    cout<<"time "<<timeline<<"ms: Process "<<rq[0].getName()<<" (tau "<<rq[0].getTau()<<"ms) will preempt "<<processes[run].getName()<<" "<<rq.print_string()<<endl;
-                    processes[run].updateCPUTime(processes[run].getCurrentBurstIndex(),-1*(has_run-1));
-                    processes[run].unRunning();
-                    processes[run].setPreempted();
-                    outting=processes[run];
-                    switch_out=2;
-                    loading=rq[0];
-                    switch_in=2;
-                    rq.removeProcess(loading);
+                if(run==-1){
+
+                }else{
+                    if(rq[0].getTau()<(processes[run].real_tau)){
+                        //preempt here
+                        cout<<"time "<<timeline<<"ms: Process "<<rq[0].getName()<<" (tau "<<rq[0].getTau()<<"ms) will preempt "<<processes[run].getName()<<" "<<rq.print_string()<<endl;
+                        processes[run].updateCPUTime(processes[run].getCurrentBurstIndex(),-1*(has_run-1));
+                        processes[run].unRunning();
+                        processes[run].setPreempted();
+                        outting=processes[run];
+                        switch_out=2;
+                        loading=rq[0];
+                        switch_in=2;
+                        rq.removeProcess(loading);
+                    }
                 }
+
             }
         }
     }
@@ -524,7 +566,6 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
         srt_second(processes,rq,timeline,cpu_free,switch_in,switch_out,
                 loading,outting,has_run);
         timeline++;
-        if(timeline>6000)break;
 
         if(switch_out!=0){
             switch_out--;
@@ -535,6 +576,7 @@ Output ShortestRemainingTime(Processes processes, Argument argv) {
         }
 
     }
+    cout<<"time "<<timeline-1<<"ms: Simulator ended for SRT [Q <empty>]"<<endl;
 
 
     cout<<endl;
