@@ -66,6 +66,7 @@ public:
     void addWaitTime(double time);
     void addTurnAroundTime(double time);
     bool prerun=false;
+    int real_tau;
 
     //debugger
     void print();
@@ -82,7 +83,6 @@ private:
     int currentIOIndex;
     double alpha;
     int tau;
-    int real_tau;
     deque<int> CPUTime;
     deque<int> CPUTimecopy;
     deque<int> IOTime;

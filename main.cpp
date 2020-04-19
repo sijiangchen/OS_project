@@ -318,6 +318,11 @@ Output ShortestJobFirst(Processes processes, Argument argv) {
 void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
         bool& cpu_free,int& switch_in, int& switch_out,Process& loading,Process& outting,int& has_run){
 
+if(timeline==1621){
+    cout<<""<<endl;
+}
+
+
     bool started_this_second=false;
     //finish switch out
     if(switch_out==0){
@@ -353,6 +358,7 @@ void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
     if(!cpu_free){
         has_run++;
         for (int i = 0; i < processes.size(); ++i) {
+
             if(processes[i].getNextCPUFinishTime()==timeline){
                 processes[i].unRunning();
                 switch_out=2;
@@ -388,7 +394,7 @@ void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
                 //if preemt or not
                 processes[i].unBlocked();
                 processes[i].increaseCurrentIOIndex();
-                if(processes[i].getTau()<(processes[processes.findRunning()].getTau()-has_run+1)){
+                if(processes[i].getTau()<(processes[processes.findRunning()].real_tau)){
                     //preemt here
                     rq.sjf_insert(processes[i]);
                     cout<<"time "<<timeline<<"ms: Process "<<processes[i].getName()<<" (tau "<<processes[i].getTau()<<"ms) completed I/O; preempting "<<processes[processes.findRunning()].getName()<<" "<<rq.print_string()<<endl;
@@ -454,7 +460,7 @@ void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
         if(started_this_second){
             if(rq.size()>0){
                 int run=processes.findRunning();
-                if(rq[0].getTau()<(processes[run].getTau()-has_run+1)){
+                if(rq[0].getTau()<(processes[run].real_tau)){
                     //preempt here
                     cout<<"time "<<timeline<<"ms: Process "<<rq[0].getName()<<" (tau "<<rq[0].getTau()<<"ms) will preempt "<<processes[run].getName()<<" "<<rq.print_string()<<endl;
                     processes[run].updateCPUTime(processes[run].getCurrentBurstIndex(),-1*(has_run-1));
@@ -470,6 +476,13 @@ void srt_second(Processes& processes,ReadyQueue& rq,int timeline,
         }
     }
 
+    //reduce the real tau for running process
+    for (int j = 0; j < processes.size(); ++j) {
+        if(processes[j].isRunning()){
+            processes[j].real_tau--;
+            break;
+        }
+    }
 
 }
 

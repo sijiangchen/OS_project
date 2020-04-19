@@ -44,6 +44,7 @@ Process::Process(char n,int time,int number,double lambda, double alpha) {
     if(this->tau==999){
         this->tau+=1;
     }
+    real_tau=tau;
     this->alpha=alpha;
     this->next_io_finish_time=0;
     this->burst_time=0;
@@ -190,6 +191,7 @@ void Process::updateTau() {
     double res=a+b;
 
     this->tau=(int)ceil(res);
+    real_tau=tau;
 }
 
 int Process::getTau() {
